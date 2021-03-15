@@ -1,26 +1,16 @@
 package net.minecraftforge.gradle.mcp.mapping;
 
-import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.Map;
+import net.minecraftforge.srgutils.IMappingFile;
 
 public class MappingInfo implements IMappingInfo {
     private final String channel;
     private final String version;
-    private final Collection<IDocumentedNode> classes;
-    private final Collection<IDocumentedNode> fields;
-    private final Collection<IDocumentedNode> methods;
-    private final Collection<INode> params;
+    private final IMappingFile mapping;
 
-    public MappingInfo(String channel, String version,
-                       Collection<IDocumentedNode> classes, Collection<IDocumentedNode> fields,
-                       Collection<IDocumentedNode> methods, Collection<INode> params) {
+    public MappingInfo(String channel, String version, IMappingFile mapping) {
         this.channel = channel;
         this.version = version;
-        this.classes = classes;
-        this.fields = fields;
-        this.methods = methods;
-        this.params = params;
+        this.mapping = mapping;
     }
 
     @Override
@@ -34,59 +24,7 @@ public class MappingInfo implements IMappingInfo {
     }
 
     @Override
-    public Collection<IDocumentedNode> getClasses() {
-        return classes;
-    }
-
-    @Override
-    public Collection<IDocumentedNode> getFields() {
-        return fields;
-    }
-
-    @Override
-    public Collection<IDocumentedNode> getMethods() {
-        return methods;
-    }
-
-    @Override
-    public Collection<INode> getParameters() {
-        return params;
-    }
-
-    public static class Node implements IDocumentedNode {
-        private final String original;
-        private final String mapped;
-        private final Map<String, String> meta;
-        @Nullable
-        private final String javadoc;
-
-        public Node(String original, String mapped, Map<String, String> meta, @Nullable String javadoc) {
-            this.original = original;
-            this.mapped = mapped;
-            this.meta = meta;
-            this.javadoc = javadoc;
-        }
-
-        @Override
-        public String getOriginal() {
-            return original;
-        }
-
-        @Override
-        public String getMapped() {
-            return mapped;
-        }
-
-        @Nullable
-        @Override
-        public String getMeta(String name) {
-            return meta.get(name);
-        }
-
-        @Nullable
-        @Override
-        public String getJavadoc() {
-            return javadoc;
-        }
+    public IMappingFile getMappings() {
+        return mapping;
     }
 }

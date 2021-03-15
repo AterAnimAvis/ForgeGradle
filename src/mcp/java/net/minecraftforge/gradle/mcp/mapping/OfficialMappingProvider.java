@@ -66,86 +66,21 @@ public class OfficialMappingProvider implements IMappingProvider {
             // MCPConfig TSRG file: OBF -> SRG
             IMappingFile tsrg = IMappingFile.load(tsrgFile);
 
-            Map<String, String> clientFields = new TreeMap<>();
-            Map<String, String> serverFields = new TreeMap<>();
-            Map<String, String> clientMethods = new TreeMap<>();
-            Map<String, String> serverMethods = new TreeMap<>();
+            // [MAPPED -> OBF] -chain-> [OBF -> SRG] => [MAPPED -> SRG] -reverse-> [SRG -> MAPPED]
+            IMappingFile client = pgClient.chain(tsrg).reverse();
+            IMappingFile server = pgServer.chain(tsrg).reverse();
+            IMappingFile merged = MappingMerger.sidedMerge(client, server);
 
-            for (IMappingFile.IClass cls : pgClient.getClasses()) {
-                IMappingFile.IClass obf = tsrg.getClass(cls.getMapped());
-                if (obf == null) // Class exists in official source, but doesn't make it past obfuscation so it's not in our mappings.
-                    continue;
-                for (IMappingFile.IField fld : cls.getFields()) {
-                    String name = obf.remapField(fld.getMapped());
-                    if (name.startsWith("field_"))
-                        clientFields.put(name, fld.getOriginal());
-                }
-                for (IMappingFile.IMethod mtd : cls.getMethods()) {
-                    String name = obf.remapMethod(mtd.getMapped(), mtd.getMappedDescriptor());
-                    if (name.startsWith("func_"))
-                        clientMethods.put(name, mtd.getOriginal());
-                }
-            }
-
-            for (IMappingFile.IClass cls : pgServer.getClasses()) {
-                IMappingFile.IClass obf = tsrg.getClass(cls.getMapped());
-                if (obf == null) // Class exists in official source, but doesn't make it past obfuscation so it's not in our mappings.
-                    continue;
-                for (IMappingFile.IField fld : cls.getFields()) {
-                    String name = obf.remapField(fld.getMapped());
-                    if (name.startsWith("field_"))
-                        serverFields.put(name, fld.getOriginal());
-                }
-                for (IMappingFile.IMethod mtd : cls.getMethods()) {
-                    String name = obf.remapMethod(mtd.getMapped(), mtd.getMappedDescriptor());
-                    if (name.startsWith("func_"))
-                        serverMethods.put(name, mtd.getOriginal());
-                }
-            }
-
-            List<IMappingInfo.IDocumentedNode> fields = new ArrayList<>();
-            List<IMappingInfo.IDocumentedNode> methods = new ArrayList<>();
-
-            Map<String, String> clientMeta = ImmutableMap.of("side", "2");
-            Map<String, String> serverMeta = ImmutableMap.of("side", "1");
-            Map<String, String> bothMeta = ImmutableMap.of("side", "0");
-
-            for (String name : clientFields.keySet()) {
-                String cname = clientFields.get(name);
-                String sname = serverFields.get(name);
-                if (cname.equals(sname)) {
-                    fields.add(new MappingInfo.Node(name, cname, clientMeta, null));
-                    serverFields.remove(name);
-                } else {
-                    fields.add(new MappingInfo.Node(name, cname, bothMeta, null));
-                }
-            }
-
-            for (String name : clientMethods.keySet()) {
-                String cname = clientMethods.get(name);
-                String sname = serverMethods.get(name);
-                if (cname.equals(sname)) {
-                    fields.add(new MappingInfo.Node(name, cname, clientMeta, null));
-                    serverMethods.remove(name);
-                } else {
-                    fields.add(new MappingInfo.Node(name, cname, bothMeta, null));
-                }
-            }
-
-            serverFields.forEach((k, v) -> fields.add(new MappingInfo.Node(k, v, serverMeta, null)));
-            serverMethods.forEach((k, v) -> methods.add(new MappingInfo.Node(k, v, serverMeta, null)));
-
-            if (mappings.getParentFile() != null && !mappings.getParentFile().exists())
-                //noinspection ResultOfMethodCallIgnored
-                mappings.getParentFile().mkdirs();
+            //TODO: Consider benefits of the different supported formats.
+            merged.write(mappings.toPath(), IMappingFile.Format.TSRG2, false);
 
             cache.save();
             Utils.updateHash(mappings, HashFunction.SHA1);
 
-            return new MappingInfo(channel, version, Collections.emptyList(), fields, methods, Collections.emptyList());
+            return new MappingInfo(channel, version, merged);
         }
 
-        return null; // TODO: STUB
+        return new MappingInfo(channel, version, IMappingFile.load(mappings));
     }
 
     private File findRenames(Project project, String classifier, IMappingFile.Format format, String version, boolean toObf) throws IOException {
