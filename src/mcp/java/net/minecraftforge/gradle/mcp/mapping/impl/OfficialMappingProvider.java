@@ -11,7 +11,9 @@ import net.minecraftforge.gradle.common.util.HashFunction;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
 import net.minecraftforge.gradle.common.util.Utils;
-import net.minecraftforge.gradle.mcp.mapping.api.MappingInfo;
+import net.minecraftforge.gradle.mcp.mapping.api.CachableMappingInfo;
+import net.minecraftforge.gradle.mcp.mapping.api.generator.MappingFileInfo;
+import net.minecraftforge.gradle.mcp.mapping.api.generator.MCPZipGenerator;
 import net.minecraftforge.gradle.mcp.mapping.utils.MappingMerger;
 import net.minecraftforge.gradle.mcp.mapping.api.IMappingInfo;
 import net.minecraftforge.gradle.mcp.mapping.api.IMappingProvider;
@@ -19,13 +21,14 @@ import net.minecraftforge.srgutils.IMappingFile;
 import org.gradle.api.Project;
 
 public class OfficialMappingProvider implements IMappingProvider {
+
     @Override
     public Collection<String> getMappingChannels() {
         return Collections.singleton("official");
     }
 
     @Override
-    public IMappingInfo getMappingInfo(Project project, String channel, String version) throws Exception {
+    public IMappingInfo getMappingInfo(Project project, String channel, String version) throws IOException {
         String mcVersion = version;
         int idx = mcVersion.lastIndexOf('-');
         if (idx != -1 && mcVersion.substring(idx + 1).matches("\\d{8}\\.\\d{6}")) {
@@ -54,7 +57,7 @@ public class OfficialMappingProvider implements IMappingProvider {
                 .add("tsrg", tsrgFile)
                 .add("codever", "1");
 
-        if (!cache.isSame() || !mappings.exists()) {
+        return new CachableMappingInfo(channel, version, mappings, cache, (destination) -> {
             // Note: IMappingFile from PG file has getMapped() as obfuscated name and getOriginal() as original name
             IMappingFile pgClient = IMappingFile.load(clientPG);
             IMappingFile pgServer = IMappingFile.load(serverPG);
@@ -71,15 +74,8 @@ public class OfficialMappingProvider implements IMappingProvider {
             IMappingFile merged = MappingMerger.sidedMerge(client, server);
 
             //TODO: Consider benefits of the different supported formats.
-            merged.write(mappings.toPath(), IMappingFile.Format.TSRG2, false);
-
-            cache.save();
-            Utils.updateHash(mappings, HashFunction.SHA1);
-
-            return new MappingInfo(channel, version, merged);
-        }
-
-        return new MappingInfo(channel, version, IMappingFile.load(mappings));
+            MCPZipGenerator.writeMCPZip(destination, new MappingFileInfo(merged));
+        });
     }
 
     private File findRenames(Project project, String classifier, IMappingFile.Format format, String version, boolean toObf) throws IOException {
@@ -104,7 +100,7 @@ public class OfficialMappingProvider implements IMappingProvider {
         return file;
     }
 
-    private File getMCPConfigZip(Project project, String version) throws IOException {
+    private File getMCPConfigZip(Project project, String version) {
         return MavenArtifactDownloader.manual(project, "de.oceanlabs.mcp:mcp_config:" + version + "@zip", false);
     }
 
@@ -118,10 +114,6 @@ public class OfficialMappingProvider implements IMappingProvider {
         if (classifier != null)
             return cache(project, "de", "oceanlabs", "mcp", "mcp_config", version, "mcp_config-" + version + '-' + classifier + '.' + ext);
         return cache(project, "de", "oceanlabs", "mcp", "mcp_config", version, "mcp_config-" + version + '.' + ext);
-    }
-
-    private File cacheMCP(Project project, String version) {
-        return cache(project, "de", "oceanlabs", "mcp", "mcp_config", version);
     }
 
     protected File cache(Project project, String... path) {

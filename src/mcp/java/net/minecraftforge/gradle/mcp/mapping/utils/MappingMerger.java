@@ -6,9 +6,9 @@ import java.util.Map;
 import net.minecraftforge.srgutils.IMappingBuilder;
 import net.minecraftforge.srgutils.IMappingFile;
 
-import static net.minecraftforge.gradle.mcp.mapping.api.IMappingInfo.SIDE_BOTH;
-import static net.minecraftforge.gradle.mcp.mapping.api.IMappingInfo.SIDE_CLIENT;
-import static net.minecraftforge.gradle.mcp.mapping.api.IMappingInfo.SIDE_SERVER;
+import static net.minecraftforge.gradle.mcp.mapping.api.Constants.SIDE_BOTH;
+import static net.minecraftforge.gradle.mcp.mapping.api.Constants.SIDE_CLIENT;
+import static net.minecraftforge.gradle.mcp.mapping.api.Constants.SIDE_SERVER;
 
 public class MappingMerger {
 

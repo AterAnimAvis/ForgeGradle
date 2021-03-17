@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping.utils;
+package net.minecraftforge.gradle.mcp.mapping.api.generator;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,12 +17,11 @@ import de.siegmar.fastcsv.writer.CsvWriter;
 import de.siegmar.fastcsv.writer.LineDelimiter;
 import de.siegmar.fastcsv.writer.QuoteStrategy;
 import net.minecraftforge.gradle.common.util.Utils;
-import net.minecraftforge.gradle.mcp.mapping.api.IMappingInfo;
 import net.minecraftforge.srgutils.IMappingFile;
 
 public class MCPZipGenerator {
 
-    public static void writeMCPZip(File outputZip, IMappingInfo mappings) throws IOException {
+    public static void writeMCPZip(File outputZip, IMappingFileInfo mappings) throws IOException {
         Preconditions.checkArgument(outputZip.isFile(), "Output zip must be a file");
         if (outputZip.exists() && !outputZip.delete()) {
             throw new IOException("Could not delete existing file " + outputZip);
@@ -56,7 +55,7 @@ public class MCPZipGenerator {
         }
     }
 
-    private static void writeCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, String fileName, IMappingInfo mapping, Collection<? extends IMappingFile.INode> nodes) throws IOException {
+    private static void writeCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, String fileName, IMappingFileInfo mapping, Collection<? extends IMappingFile.INode> nodes) throws IOException {
         Consumer<CsvWriter> header = (csv) -> csv.writeRow("searge", "name", "side", "desc");
 
         BiConsumer<CsvWriter, IMappingFile.INode> row = (csv, node) -> {
@@ -66,7 +65,7 @@ public class MCPZipGenerator {
         writeCsvFile(writer, zipOut, fileName, nodes, header, row);
     }
 
-    private static void writeParamCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, IMappingInfo mapping, Collection<? extends IMappingFile.INode> nodes) throws IOException {
+    private static void writeParamCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, IMappingFileInfo mapping, Collection<? extends IMappingFile.INode> nodes) throws IOException {
         Consumer<CsvWriter> header = (csv) -> csv.writeRow("param", "name", "side");
 
         BiConsumer<CsvWriter, IMappingFile.INode> row = (csv, node) -> {

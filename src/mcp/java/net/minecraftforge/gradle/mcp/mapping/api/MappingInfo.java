@@ -1,16 +1,17 @@
 package net.minecraftforge.gradle.mcp.mapping.api;
 
-import net.minecraftforge.srgutils.IMappingFile;
+import java.io.File;
+import java.io.IOException;
 
 public class MappingInfo implements IMappingInfo {
-    private final String channel;
-    private final String version;
-    private final IMappingFile mapping;
+    protected final String channel;
+    protected final String version;
+    protected final File file;
 
-    public MappingInfo(String channel, String version, IMappingFile mapping) {
+    public MappingInfo(String channel, String version, File file) {
         this.channel = channel;
         this.version = version;
-        this.mapping = mapping;
+        this.file = file;
     }
 
     @Override
@@ -24,7 +25,7 @@ public class MappingInfo implements IMappingInfo {
     }
 
     @Override
-    public IMappingFile getMappings() {
-        return mapping;
+    public File find() throws IOException {
+        return file;
     }
 }
