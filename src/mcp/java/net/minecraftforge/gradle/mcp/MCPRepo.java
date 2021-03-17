@@ -40,7 +40,7 @@ import net.minecraftforge.gradle.common.util.MinecraftRepo;
 import net.minecraftforge.gradle.common.util.POMBuilder;
 import net.minecraftforge.gradle.common.util.Utils;
 import net.minecraftforge.gradle.common.util.VersionJson;
-import net.minecraftforge.gradle.mcp.mapping.IMappingProvider;
+import net.minecraftforge.gradle.mcp.mapping.api.IMappingProvider;
 import net.minecraftforge.gradle.mcp.mapping.MappingProviders;
 import net.minecraftforge.gradle.mcp.util.MCPRuntime;
 import net.minecraftforge.gradle.mcp.util.MCPWrapper;

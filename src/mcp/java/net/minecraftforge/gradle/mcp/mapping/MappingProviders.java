@@ -3,6 +3,8 @@ package net.minecraftforge.gradle.mcp.mapping;
 import javax.annotation.Nullable;
 import java.util.ServiceLoader;
 
+import net.minecraftforge.gradle.mcp.mapping.api.IMappingProvider;
+
 public class MappingProviders {
     private static final ServiceLoader<IMappingProvider> LOADER = ServiceLoader.load(IMappingProvider.class);
 

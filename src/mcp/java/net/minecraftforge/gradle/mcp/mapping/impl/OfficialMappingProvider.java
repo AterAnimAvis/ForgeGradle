@@ -1,21 +1,20 @@
-package net.minecraftforge.gradle.mcp.mapping;
+package net.minecraftforge.gradle.mcp.mapping.impl;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
-import com.google.common.collect.ImmutableMap;
 import net.minecraftforge.gradle.common.config.MCPConfigV2;
 import net.minecraftforge.gradle.common.util.HashFunction;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
 import net.minecraftforge.gradle.common.util.Utils;
+import net.minecraftforge.gradle.mcp.mapping.api.MappingInfo;
+import net.minecraftforge.gradle.mcp.mapping.utils.MappingMerger;
+import net.minecraftforge.gradle.mcp.mapping.api.IMappingInfo;
+import net.minecraftforge.gradle.mcp.mapping.api.IMappingProvider;
 import net.minecraftforge.srgutils.IMappingFile;
 import org.gradle.api.Project;
 

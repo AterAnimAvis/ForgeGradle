@@ -1,6 +1,5 @@
-package net.minecraftforge.gradle.mcp.mapping;
+package net.minecraftforge.gradle.mcp.mapping.utils;
 
-import javax.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -8,11 +7,9 @@ import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 import com.google.common.base.Preconditions;
@@ -20,54 +17,12 @@ import de.siegmar.fastcsv.writer.CsvWriter;
 import de.siegmar.fastcsv.writer.LineDelimiter;
 import de.siegmar.fastcsv.writer.QuoteStrategy;
 import net.minecraftforge.gradle.common.util.Utils;
+import net.minecraftforge.gradle.mcp.mapping.api.IMappingInfo;
 import net.minecraftforge.srgutils.IMappingFile;
 
-public interface IMappingInfo {
+public class MCPZipGenerator {
 
-    String SIDE_CLIENT = "0";
-    String SIDE_SERVER = "1";
-    String SIDE_BOTH = "2";
-
-    String getChannel();
-
-    String getVersion();
-
-    /**
-     * @return IMappingFile mapping from Srg -> Mapped.
-     */
-    IMappingFile getMappings();
-
-    default String getJavadocForNode(IMappingFile.INode node) {
-        return node.getMetadata().getOrDefault("comment", "");
-    }
-
-    default String getSideForNode(IMappingFile.INode node) {
-        String side = node.getMetadata().getOrDefault("side", SIDE_BOTH);
-
-        if (!SIDE_CLIENT.equals(side) && !SIDE_SERVER.equals(side) && !SIDE_BOTH.equals(side))
-            return SIDE_BOTH;
-
-        return side;
-    }
-
-    default Collection<IMappingFile.IClass> getClasses() {
-        return Collections.unmodifiableCollection(getMappings().getClasses());
-    }
-
-    default Collection<IMappingFile.IField> getFields() {
-        return Collections.unmodifiableCollection(getMappings().getClasses().stream().flatMap(cls -> cls.getFields().stream()).collect(Collectors.toList()));
-    }
-
-    default Collection<IMappingFile.IMethod> getMethods() {
-        return Collections.unmodifiableCollection(getMappings().getClasses().stream().flatMap(cls -> cls.getMethods().stream()).collect(Collectors.toList()));
-    }
-
-    default Collection<IMappingFile.IParameter> getParameters() {
-        return Collections.unmodifiableCollection(getMappings().getClasses().stream().flatMap(cls -> cls.getMethods().stream()).flatMap(mtd -> mtd.getParameters().stream()).collect(Collectors.toList()));
-    }
-
-    // Expects there is a meta field of 'side' with a number
-    static void writeMCPZip(File outputZip, IMappingInfo mappings) throws IOException {
+    public static void writeMCPZip(File outputZip, IMappingInfo mappings) throws IOException {
         Preconditions.checkArgument(outputZip.isFile(), "Output zip must be a file");
         if (outputZip.exists() && !outputZip.delete()) {
             throw new IOException("Could not delete existing file " + outputZip);
@@ -101,7 +56,7 @@ public interface IMappingInfo {
         }
     }
 
-    static void writeCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, String fileName, IMappingInfo mapping, Collection<? extends IMappingFile.INode> nodes) throws IOException {
+    private static void writeCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, String fileName, IMappingInfo mapping, Collection<? extends IMappingFile.INode> nodes) throws IOException {
         Consumer<CsvWriter> header = (csv) -> csv.writeRow("searge", "name", "side", "desc");
 
         BiConsumer<CsvWriter, IMappingFile.INode> row = (csv, node) -> {
@@ -111,7 +66,7 @@ public interface IMappingInfo {
         writeCsvFile(writer, zipOut, fileName, nodes, header, row);
     }
 
-    static void writeParamCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, IMappingInfo mapping, Collection<? extends IMappingFile.INode> nodes) throws IOException {
+    private static void writeParamCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, IMappingInfo mapping, Collection<? extends IMappingFile.INode> nodes) throws IOException {
         Consumer<CsvWriter> header = (csv) -> csv.writeRow("param", "name", "side");
 
         BiConsumer<CsvWriter, IMappingFile.INode> row = (csv, node) -> {
@@ -121,7 +76,7 @@ public interface IMappingInfo {
         writeCsvFile(writer, zipOut, "params.csv", nodes, header, row);
     }
 
-    static <T> void writeCsvFile(Supplier<CsvWriter> csvWriter, ZipOutputStream zipOut, String fileName, Collection<? extends T> nodes, Consumer<CsvWriter> header, BiConsumer<CsvWriter, T> callback) throws IOException {
+    private static <T> void writeCsvFile(Supplier<CsvWriter> csvWriter, ZipOutputStream zipOut, String fileName, Collection<? extends T> nodes, Consumer<CsvWriter> header, BiConsumer<CsvWriter, T> callback) throws IOException {
         if (!nodes.isEmpty()) {
             zipOut.putNextEntry(Utils.getStableEntry(fileName));
             try (CsvWriter csv = csvWriter.get()) {
@@ -132,4 +87,5 @@ public interface IMappingInfo {
             zipOut.closeEntry();
         }
     }
+
 }

@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping;
+package net.minecraftforge.gradle.mcp.mapping.api;
 
 import java.util.Collection;
 
