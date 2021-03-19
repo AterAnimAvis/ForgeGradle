@@ -30,4 +30,9 @@ public class MCPMappingProvider implements IMappingProvider {
 
         return new MappingInfo(channel, version, MavenArtifactDownloader.manual(project, desc, false));
     }
+
+    @Override
+    public String toString() {
+        return "MCP Community Mappings";
+    }
 }

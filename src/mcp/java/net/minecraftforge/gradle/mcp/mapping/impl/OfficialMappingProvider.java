@@ -12,6 +12,7 @@ import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
 import net.minecraftforge.gradle.common.util.Utils;
 import net.minecraftforge.gradle.mcp.mapping.api.CachableMappingInfo;
+import net.minecraftforge.gradle.mcp.mapping.api.SrgMappingInfo;
 import net.minecraftforge.gradle.mcp.mapping.api.generator.MappingFileInfo;
 import net.minecraftforge.gradle.mcp.mapping.api.generator.MCPZipGenerator;
 import net.minecraftforge.gradle.mcp.mapping.utils.MappingMerger;
@@ -57,7 +58,7 @@ public class OfficialMappingProvider implements IMappingProvider {
                 .add("tsrg", tsrgFile)
                 .add("codever", "1");
 
-        return new CachableMappingInfo(channel, version, mappings, cache, (destination) -> {
+        return new SrgMappingInfo(channel, version, mappings, cache, new SrgMappingInfo.CachingIOSupplier<>(() -> {
             // Note: IMappingFile from PG file has getMapped() as obfuscated name and getOriginal() as original name
             IMappingFile pgClient = IMappingFile.load(clientPG);
             IMappingFile pgServer = IMappingFile.load(serverPG);
@@ -71,11 +72,9 @@ public class OfficialMappingProvider implements IMappingProvider {
             // [MAPPED -> OBF] -chain-> [OBF -> SRG] => [MAPPED -> SRG] -reverse-> [SRG -> MAPPED]
             IMappingFile client = pgClient.chain(tsrg).reverse();
             IMappingFile server = pgServer.chain(tsrg).reverse();
-            IMappingFile merged = MappingMerger.merge(client, server);
 
-            //TODO: Consider benefits of the different supported formats.
-            MCPZipGenerator.writeMCPZip(destination, new MappingFileInfo(merged));
-        });
+            return MappingMerger.merge(client, server);
+        }));
     }
 
     private File findRenames(Project project, String classifier, IMappingFile.Format format, String version, boolean toObf) throws IOException {
@@ -123,5 +122,10 @@ public class OfficialMappingProvider implements IMappingProvider {
     private HashStore commonHash(Project project, File mcp) {
         return new HashStore(Utils.getCache(project, "mcp_repo"))  // TODO: remove hardcoded cache root
                 .add("mcp", mcp);
+    }
+
+    @Override
+    public String toString() {
+        return "Official Mappings";
     }
 }

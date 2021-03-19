@@ -51,6 +51,8 @@ import net.minecraftforge.gradle.common.util.Utils;
 import net.minecraftforge.gradle.mcp.MCPRepo;
 import net.minecraftforge.gradle.mcp.function.MCPFunction;
 import net.minecraftforge.gradle.mcp.function.MCPFunctionFactory;
+import net.minecraftforge.gradle.mcp.mapping.MappingProviders;
+import net.minecraftforge.gradle.mcp.mapping.api.IMappingInfo;
 import net.minecraftforge.gradle.mcp.task.GenerateSRG;
 import net.minecraftforge.gradle.mcp.util.MCPRuntime;
 import net.minecraftforge.gradle.mcp.util.MCPWrapper;
@@ -61,9 +63,6 @@ import net.minecraftforge.gradle.userdev.tasks.RenameJar;
 import net.minecraftforge.gradle.userdev.tasks.RenameJarInPlace;
 import net.minecraftforge.srgutils.IMappingFile;
 import net.minecraftforge.srgutils.MinecraftVersion;
-import net.minecraftforge.srgutils.IMappingFile.IField;
-import net.minecraftforge.srgutils.IMappingFile.IMethod;
-import net.minecraftforge.srgutils.IRenamer;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -117,7 +116,6 @@ public class MinecraftUserRepo extends BaseRepo {
     private final String AT_HASH;
     private final String MAPPING;
     private final boolean isPatcher;
-    private final Map<String, McpNames> mapCache = new HashMap<>();
     private boolean loadedParents = false;
     private Patcher parent;
     private MCP mcp;
@@ -533,14 +531,7 @@ public class MinecraftUserRepo extends BaseRepo {
     }
 
     private File findRaw(String mapping) throws IOException {
-        File names = findMapping(mapping);
-        HashStore cache = commonHash(names)
-            .add("codever", "2");
-
-        if (mapping != null && names == null) {
-            debug("  Finding Raw: Could not find names, exiting");
-            return null;
-        }
+        HashStore cache = commonHash(null).add("codever", "2");
 
         File recomp = findRecomp(mapping, false);
         if (recomp != null) {
@@ -685,7 +676,7 @@ public class MinecraftUserRepo extends BaseRepo {
                 RenameJarInPlace rename = createTask("renameJarInPlace", RenameJarInPlace.class);
                 rename.setHasLog(false);
                 rename.setInput(bin);
-                rename.setMappings(findSrgToMcp(mapping, names));
+                rename.setMappings(findSrgToMcp(mapping));
                 rename.apply();
             } else {
                 debug("    Renaming injected jar");
@@ -694,7 +685,7 @@ public class MinecraftUserRepo extends BaseRepo {
                 rename.setHasLog(false);
                 rename.setInput(injected);
                 rename.setOutput(bin);
-                rename.setMappings(findSrgToMcp(mapping, names));
+                rename.setMappings(findSrgToMcp(mapping));
                 rename.apply();
             }
 
@@ -887,16 +878,6 @@ public class MinecraftUserRepo extends BaseRepo {
         }
     }
 
-    private McpNames loadMCPNames(String name, File data) throws IOException {
-        McpNames map = mapCache.get(name);
-        String hash = HashFunction.SHA1.hash(data);
-        if (map == null || !hash.equals(map.hash)) {
-            map = McpNames.load(data);
-            mapCache.put(name, map);
-        }
-        return map;
-    }
-
     private File findObfToSrg(IMappingFile.Format format) throws IOException {
         String ext = format.name().toLowerCase();
         File root = cache(mcp.getArtifact().getGroup().replace('.', '/'), mcp.getArtifact().getName(), mcp.getArtifact().getVersion());
@@ -916,36 +897,23 @@ public class MinecraftUserRepo extends BaseRepo {
         return file;
     }
 
-    private File findSrgToMcp(String mapping, File names) throws IOException {
-        if (names == null) {
-            debug("Attempted to create SRG to MCP with null MCP mappings: " + mapping);
-            throw new IllegalArgumentException("Attempted to create SRG to MCP with null MCP mappings: " + mapping);
-        }
+    private File findSrgToMcp(String mapping) throws IOException {
         File root = cache(mcp.getArtifact().getGroup().replace('.', '/'), mcp.getArtifact().getName(), mcp.getArtifact().getVersion());
         String srg_name = "srg_to_" + mapping + ".tsrg";
         File srg = new File(root, srg_name);
 
         HashStore cache = new HashStore()
             .add("mcp", mcp.getZip())
-            .add("mapping", names)
+            .add("mapping", mapping)
             .load(new File(root, srg_name + ".input"));
 
         if (!cache.isSame() || !srg.exists()) {
             info("Creating SRG -> MCP TSRG");
             byte[] data = mcp.getData("mappings");
-            McpNames mcp_names = loadMCPNames(mapping, names);
-            IMappingFile obf_to_srg = IMappingFile.load(new ByteArrayInputStream(data));
-            IMappingFile srg_to_named = obf_to_srg.reverse().chain(obf_to_srg).rename(new IRenamer() {
-                @Override
-                public String rename(IField value) {
-                    return mcp_names.rename(value.getMapped());
-                }
+            final IMappingInfo info = MappingProviders.getInfo(project, mapping);
 
-                @Override
-                public String rename(IMethod value) {
-                    return mcp_names.rename(value.getMapped());
-                }
-            });
+            IMappingFile obf_to_srg = IMappingFile.load(new ByteArrayInputStream(data));
+            IMappingFile srg_to_named = info.applyMappings(obf_to_srg.reverse().chain(obf_to_srg));
 
             srg_to_named.write(srg.toPath(), IMappingFile.Format.TSRG, false);
             cache.save();

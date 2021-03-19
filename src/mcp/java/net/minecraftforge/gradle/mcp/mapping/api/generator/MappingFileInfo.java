@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import net.minecraftforge.gradle.mcp.mapping.utils.MappingStreams;
 import net.minecraftforge.srgutils.IMappingFile;
 
-public class MappingFileInfo implements IMappingFileInfo{
+public class MappingFileInfo implements IMappingFileInfo {
 
     private final IMappingFile source;
 

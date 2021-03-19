@@ -28,13 +28,9 @@ import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
-import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
-import net.minecraftforge.gradle.common.util.McpNames;
-import net.minecraftforge.gradle.mcp.MCPRepo;
+import net.minecraftforge.gradle.mcp.mapping.MappingProviders;
+import net.minecraftforge.gradle.mcp.mapping.api.IMappingInfo;
 import net.minecraftforge.srgutils.IMappingFile;
-import net.minecraftforge.srgutils.IMappingFile.IField;
-import net.minecraftforge.srgutils.IMappingFile.IMethod;
-import net.minecraftforge.srgutils.IRenamer;
 
 public class GenerateSRG extends DefaultTask {
     private File srg;
@@ -46,37 +42,15 @@ public class GenerateSRG extends DefaultTask {
 
     @TaskAction
     public void apply() throws IOException {
-        File names = findNames(getMappings());
-        if (names == null)
-            throw new IllegalStateException("Invalid mappings: " + getMappings() + " Could not find archive");
+        IMappingInfo info = MappingProviders.getInfo(getProject(), getMappings());
 
         IMappingFile input = IMappingFile.load(srg);
         if (!getNotch())
             input = input.reverse().chain(input); // Reverse makes SRG->OBF, chain makes SRG->SRG
 
-        McpNames map = McpNames.load(names);
-        IMappingFile ret = input.rename(new IRenamer() {
-            @Override
-            public String rename(IField value) {
-                return map.rename(value.getMapped());
-            }
-
-            @Override
-            public String rename(IMethod value) {
-                return map.rename(value.getMapped());
-            }
-        });
+        IMappingFile ret = info.applyMappings(input);
 
         ret.write(getOutput().toPath(), getFormat(), getReverse());
-    }
-
-    private File findNames(String mapping) {
-        int idx = mapping.lastIndexOf('_');
-        if (idx == -1) return null; //Invalid format
-        String channel = mapping.substring(0, idx);
-        String version = mapping.substring(idx + 1);
-        String desc = MCPRepo.getMappingDep(channel, version);
-        return MavenArtifactDownloader.generate(getProject(), desc, false);
     }
 
     @InputFile
