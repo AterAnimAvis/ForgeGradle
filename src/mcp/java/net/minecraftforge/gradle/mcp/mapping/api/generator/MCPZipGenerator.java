@@ -28,6 +28,9 @@ public class MCPZipGenerator {
             throw new IOException("Could not delete existing file " + outputZip);
         }
 
+        if (!outputZip.getParentFile().exists())
+            outputZip.getParentFile().mkdirs();
+
         try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(outputZip));
              BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(zipOut))) {
             Supplier<CsvWriter> csvWriterSupplier
