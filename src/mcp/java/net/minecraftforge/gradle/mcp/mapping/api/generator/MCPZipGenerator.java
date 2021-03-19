@@ -35,7 +35,7 @@ public class MCPZipGenerator {
              BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(zipOut))) {
             Supplier<CsvWriter> csvWriterSupplier
                 = () -> CsvWriter.builder()
-                .quoteStrategy(QuoteStrategy.ALWAYS)
+                .quoteStrategy(QuoteStrategy.REQUIRED)
                 .lineDelimiter(LineDelimiter.LF)
                 .build(new FilterWriter(writer) {
                     @Override

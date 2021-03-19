@@ -50,8 +50,6 @@ import org.gradle.api.logging.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.util.Map;
 
@@ -325,9 +323,9 @@ public class MCPRepo extends BaseRepo {
         String channel = mapping.substring(0, idx);
         String version = mapping.substring(idx + 1);
 
-        final IMappingProvider provider = MappingProviders.getProvider(channel);
+        final IMappingProvider provider = MappingProviders.getProvider(project, channel);
         if (provider == null) {
-            throw new IllegalArgumentException("Unknown mapping provider: " + mapping);
+            throw new IllegalArgumentException("Unknown mapping provider for channel: " + channel);
         }
 
         final IMappingInfo info = provider.getMappingInfo(project, channel, version);
@@ -358,17 +356,6 @@ public class MCPRepo extends BaseRepo {
         }
 
         return extra;
-    }
-
-    private static class UncloseableOutputStreamWritter extends OutputStreamWriter {
-        public UncloseableOutputStreamWritter(OutputStream out) {
-            super(out);
-        }
-
-        @Override
-        public void close() throws IOException {
-            super.flush();
-        }
     }
 
     private File findEmptyPom(String side, String version) throws IOException {

@@ -2,6 +2,8 @@ package net.minecraftforge.gradle.mcp.mapping.utils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Stream;
 
 import net.minecraftforge.srgutils.IMappingBuilder;
 import net.minecraftforge.srgutils.IMappingFile;
@@ -16,22 +18,45 @@ public class MappingMerger {
     private static final String RIGHT = "right";
     private static final String SIDE = "side";
 
-    public static IMappingFile merge(IMappingFile... files) {
+    /**
+     * Expects SRG -> OBF
+     */
+    public static IMappingFile merge(IMappingFile client, IMappingFile server) {
         MappingBuilder builder = new MappingBuilder();
 
-        for (IMappingFile file : files)
-            builder.inject(file);
+        Map<String, String> classes = calculateSides(
+            MappingStreams.getClasses(client).filter(MappingStreams::isSrg),
+            MappingStreams.getClasses(server).filter(MappingStreams::isSrg)
+        );
+
+        Map<String, String> fields  = calculateSides(
+            MappingStreams.getFields(client).filter(MappingStreams::isSrg),
+            MappingStreams.getFields(server).filter(MappingStreams::isSrg)
+        );
+
+        Map<String, String> methods = calculateSides(
+            MappingStreams.getMethods(client).filter(MappingStreams::isSrg),
+            MappingStreams.getMethods(server).filter(MappingStreams::isSrg)
+        );
+
+        Map<String, String> params  = calculateSides(
+            MappingStreams.getParameters(client).filter(MappingStreams::isSrg),
+            MappingStreams.getParameters(server).filter(MappingStreams::isSrg)
+        );
+
+        builder.inject(client, classes, fields, methods, params);
+        builder.inject(server, classes, fields, methods, params);
 
         return builder.build();
     }
 
-    public static IMappingFile sidedMerge(IMappingFile client, IMappingFile server) {
-        MappingBuilder builder = new MappingBuilder();
+    private static Map<String, String> calculateSides(Stream<? extends IMappingFile.INode> client, Stream<? extends IMappingFile.INode> server) {
+        Map<String, String> map = new TreeMap<>();
 
-        builder.inject(client, SIDE_CLIENT);
-        builder.inject(server, SIDE_SERVER);
+        client.map(IMappingFile.INode::getOriginal).forEach((entry) -> map.put(entry, SIDE_CLIENT));
+        server.map(IMappingFile.INode::getOriginal).forEach((entry) -> map.merge(entry, SIDE_SERVER, (a, b) -> SIDE_BOTH));
 
-        return builder.build();
+        return map;
     }
 
     private static class MappingBuilder {
@@ -40,14 +65,9 @@ public class MappingMerger {
         private final Map<String, Class> classes = new HashMap<>();
         private final IMappingBuilder actual = IMappingBuilder.create(LEFT, RIGHT);
 
-        public void inject(IMappingFile file) {
+        public void inject(IMappingFile file, Map<String, String> classes, Map<String, String> methods, Map<String, String> fields, Map<String, String> params) {
             injectPackages(file);
-            injectClasses(file);
-        }
-
-        public void inject(IMappingFile file, String side) {
-            injectPackages(file, side);
-            injectClasses(file, side);
+            injectClasses(file, classes, methods, fields, params);
         }
 
         private void injectPackages(IMappingFile file) {
@@ -57,24 +77,10 @@ public class MappingMerger {
             }
         }
 
-        private void injectPackages(IMappingFile file, String side) {
-            for (IMappingFile.IPackage input : file.getPackages()) {
-                IMappingBuilder.IPackage pkg = addPackage(input.getOriginal(), input.getMapped(), side);
-                input.getMetadata().forEach(pkg::meta);
-            }
-        }
-
-        private void injectClasses(IMappingFile file) {
+        private void injectClasses(IMappingFile file, Map<String, String> classes, Map<String, String> fields, Map<String, String> methods, Map<String, String> params) {
             for (IMappingFile.IClass input : file.getClasses()) {
-                Class cls = addClass(input.getOriginal(), input.getMapped());
-                cls.inject(input);
-            }
-        }
-
-        private void injectClasses(IMappingFile file, String side) {
-            for (IMappingFile.IClass input : file.getClasses()) {
-                Class cls = addClass(input.getOriginal(), input.getMapped(), side);
-                cls.inject(input, side);
+                Class cls = addClass(input.getOriginal(), input.getMapped(), classes);
+                cls.inject(input, fields, methods, params);
             }
         }
 
@@ -82,26 +88,14 @@ public class MappingMerger {
             return packages.computeIfAbsent(left + "|" + right, (k) -> actual.addPackage(left, right));
         }
 
-        private IMappingBuilder.IPackage addPackage(String left, String right, String side) {
-            return packages.compute(left + "|" + right, (k, v) -> {
-                if (v != null) return v.meta(SIDE, SIDE_BOTH);
+        private Class addClass(String left, String right, Map<String, String> sides) {
+            return classes.computeIfAbsent(left + "|" + right, (k) -> {
+                IMappingBuilder.IClass cls = actual.addClass(left, right);
 
-                return actual.addPackage(left, right).meta(SIDE, side);
-            });
-        }
+                if (sides.containsKey(left))
+                    cls.meta(SIDE, sides.getOrDefault(left, SIDE_BOTH));
 
-        private Class addClass(String left, String right) {
-            return classes.computeIfAbsent(left + "|" + right, (k) -> new Class(actual.addClass(left, right)));
-        }
-
-        private Class addClass(String left, String right, String side) {
-            return classes.compute(left + "|" + right, (k, v) -> {
-                if (v != null) {
-                    v.actual.meta(SIDE, SIDE_BOTH);
-                    return v;
-                }
-
-                return new Class(actual.addClass(left, right).meta(SIDE, side));
+                return new Class(cls);
             });
         }
 
@@ -119,72 +113,46 @@ public class MappingMerger {
                 this.actual = actual;
             }
 
-            public void inject(IMappingFile.IClass clazz) {
+            public void inject(IMappingFile.IClass clazz, Map<String, String> fields, Map<String, String> methods, Map<String, String> params) {
                 clazz.getMetadata().forEach(actual::meta);
 
-                injectFields(clazz);
-                injectMethods(clazz);
+                injectFields(clazz, fields);
+                injectMethods(clazz, methods, params);
             }
 
-            public void inject(IMappingFile.IClass clazz, String side) {
-                clazz.getMetadata().forEach(actual::meta);
-
-                injectFields(clazz, side);
-                injectMethods(clazz, side);
-            }
-
-            private void injectFields(IMappingFile.IClass clazz) {
+            private void injectFields(IMappingFile.IClass clazz, Map<String, String> sides) {
                 for (IMappingFile.IField input : clazz.getFields()) {
-                    IMappingBuilder.IField field = field(input.getDescriptor(), input.getOriginal(), input.getMapped());
+                    IMappingBuilder.IField field = field(input.getDescriptor(), input.getOriginal(), input.getMapped(), sides);
                     input.getMetadata().forEach(field::meta);
                 }
             }
 
-            private void injectFields(IMappingFile.IClass clazz, String side) {
-                for (IMappingFile.IField input : clazz.getFields()) {
-                    IMappingBuilder.IField field = field(input.getDescriptor(), input.getOriginal(), input.getMapped(), side);
-                    input.getMetadata().forEach(field::meta);
-                }
-            }
-
-            private void injectMethods(IMappingFile.IClass clazz) {
+            private void injectMethods(IMappingFile.IClass clazz, Map<String, String> methods, Map<String, String> params) {
                 for (IMappingFile.IMethod input : clazz.getMethods()) {
-                    Method method = method(input.getDescriptor(), input.getOriginal(), input.getMapped());
-                    method.inject(input);
+                    Method method = method(input.getDescriptor(), input.getOriginal(), input.getMapped(), methods);
+                    method.inject(input, params);
                 }
             }
 
-            private void injectMethods(IMappingFile.IClass clazz, String side) {
-                for (IMappingFile.IMethod input : clazz.getMethods()) {
-                    Method method = method(input.getDescriptor(), input.getOriginal(), input.getMapped(), side);
-                    method.inject(input, side);
-                }
-            }
-
-            private IMappingBuilder.IField field(String descriptor, String left, String right) {
-                return fields.computeIfAbsent(descriptor + " " + left + "|" + right, (k) -> actual.field(left, right).descriptor(descriptor));
-            }
-
-            private IMappingBuilder.IField field(String descriptor, String left, String right, String side) {
+            private IMappingBuilder.IField field(String descriptor, String left, String right, Map<String, String> sides) {
                 return fields.compute(descriptor + " " + left + "|" + right, (k, v) -> {
-                    if (v != null) return v.meta(SIDE, SIDE_BOTH);
+                    IMappingBuilder.IField field = actual.field(left, right).descriptor(descriptor);
 
-                    return actual.field(left, right).descriptor(descriptor).meta(SIDE, side);
+                    if (sides.containsKey(left))
+                        field.meta(SIDE, sides.getOrDefault(left, SIDE_BOTH));
+
+                    return field;
                 });
             }
 
-            private Method method(String descriptor, String left, String right) {
-                return methods.computeIfAbsent(descriptor + " " + left + "|" + right, (k) -> new Method(actual.method(descriptor, left, right)));
-            }
-
-            private Method method(String descriptor, String left, String right, String side) {
+            private Method method(String descriptor, String left, String right, Map<String, String> sides) {
                 return methods.compute(descriptor + " " + left + "|" + right, (k, v) -> {
-                    if (v != null) {
-                        v.actual.meta(SIDE, SIDE_BOTH);
-                        return v;
-                    }
+                    IMappingBuilder.IMethod method = actual.method(descriptor, left, right);
 
-                    return new Method(actual.method(descriptor, left, right).meta(SIDE, side));
+                    if (sides.containsKey(left))
+                        method.meta(SIDE, sides.getOrDefault(left, SIDE_BOTH));
+
+                    return new Method(method);
                 });
             }
 
@@ -197,41 +165,27 @@ public class MappingMerger {
                     this.actual = actual;
                 }
 
-                public void inject(IMappingFile.IMethod input) {
+                public void inject(IMappingFile.IMethod input, Map<String, String> params) {
                     input.getMetadata().forEach(actual::meta);
 
-                    injectParameters(input);
+                    injectParameters(input, params);
                 }
 
-                public void inject(IMappingFile.IMethod input, String side) {
-                    input.getMetadata().forEach(actual::meta);
-
-                    injectParameters(input, side);
-                }
-
-                private void injectParameters(IMappingFile.IMethod method) {
+                private void injectParameters(IMappingFile.IMethod method, Map<String, String> params) {
                     for (IMappingFile.IParameter input : method.getParameters()) {
-                        IMappingBuilder.IParameter parameter = parameter(input.getIndex(), input.getOriginal(), input.getMapped());
+                        IMappingBuilder.IParameter parameter = parameter(input.getIndex(), input.getOriginal(), input.getMapped(), params);
                         input.getMetadata().forEach(parameter::meta);
                     }
                 }
 
-                private void injectParameters(IMappingFile.IMethod method, String side) {
-                    for (IMappingFile.IParameter input : method.getParameters()) {
-                        IMappingBuilder.IParameter parameter = parameter(input.getIndex(), input.getOriginal(), input.getMapped(), side);
-                        input.getMetadata().forEach(parameter::meta);
-                    }
-                }
-
-                private IMappingBuilder.IParameter parameter(int index, String left, String right) {
-                    return parameters.computeIfAbsent(index + " " + left + "|" + right, (k) -> actual.parameter(index, left, right));
-                }
-
-                private IMappingBuilder.IParameter parameter(int index, String left, String right, String side) {
+                private IMappingBuilder.IParameter parameter(int index, String left, String right, Map<String, String> sides) {
                     return parameters.compute(index + " " + left + "|" + right, (k, v) -> {
-                        if (v != null) return v.meta(SIDE, SIDE_BOTH);
+                        IMappingBuilder.IParameter parameter = actual.parameter(index, left, right);
 
-                        return actual.parameter(index, left, right).meta(SIDE, side);
+                        if (sides.containsKey(left))
+                            parameter.meta(SIDE, sides.getOrDefault(left, SIDE_BOTH));
+
+                        return parameter;
                     });
                 }
             }

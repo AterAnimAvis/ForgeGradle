@@ -1,7 +1,8 @@
 package net.minecraftforge.gradle.mcp.mapping.api.generator;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import net.minecraftforge.gradle.mcp.mapping.utils.MappingStreams;
@@ -19,19 +20,31 @@ public class MappingFileInfo implements IMappingFileInfo{
     }
 
     public Collection<IMappingFile.IClass> getClasses() {
-        return Collections.unmodifiableCollection(source.getClasses());
+        return MappingStreams
+            .getClasses(source)
+            .filter(MappingStreams::isSrg)
+            .collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(IMappingFile.INode::getOriginal))));
     }
 
     public Collection<IMappingFile.IField> getFields() {
-        return MappingStreams.getFields(source).collect(Collectors.toList());
+        return MappingStreams
+            .getFields(source)
+            .filter(MappingStreams::isSrg)
+            .collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(IMappingFile.INode::getOriginal))));
     }
 
     public Collection<IMappingFile.IMethod> getMethods() {
-        return MappingStreams.getMethods(source).collect(Collectors.toList());
+        return MappingStreams
+            .getMethods(source)
+            .filter(MappingStreams::isSrg)
+            .collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(IMappingFile.INode::getOriginal))));
     }
 
     public Collection<IMappingFile.IParameter> getParameters() {
-        return MappingStreams.getParameters(source).collect(Collectors.toList());
+        return MappingStreams
+            .getParameters(source)
+            .filter(MappingStreams::isSrg)
+            .collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(IMappingFile.INode::getOriginal))));
     }
 
 }

@@ -71,7 +71,7 @@ public class OfficialMappingProvider implements IMappingProvider {
             // [MAPPED -> OBF] -chain-> [OBF -> SRG] => [MAPPED -> SRG] -reverse-> [SRG -> MAPPED]
             IMappingFile client = pgClient.chain(tsrg).reverse();
             IMappingFile server = pgServer.chain(tsrg).reverse();
-            IMappingFile merged = MappingMerger.sidedMerge(client, server);
+            IMappingFile merged = MappingMerger.merge(client, server);
 
             //TODO: Consider benefits of the different supported formats.
             MCPZipGenerator.writeMCPZip(destination, new MappingFileInfo(merged));
