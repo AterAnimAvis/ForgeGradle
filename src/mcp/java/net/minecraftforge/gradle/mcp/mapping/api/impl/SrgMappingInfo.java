@@ -1,19 +1,19 @@
-package net.minecraftforge.gradle.mcp.mapping.api;
+package net.minecraftforge.gradle.mcp.mapping.api.impl;
 
 import java.io.File;
 import java.io.IOException;
 
 import net.minecraftforge.gradle.common.util.HashStore;
-import net.minecraftforge.gradle.common.util.Utils;
+import net.minecraftforge.gradle.common.util.func.IOSupplier;
 import net.minecraftforge.gradle.mcp.mapping.api.generator.MCPZipGenerator;
 import net.minecraftforge.gradle.mcp.mapping.api.generator.MappingFileInfo;
 import net.minecraftforge.srgutils.IMappingFile;
 
 public class SrgMappingInfo extends CachableMappingInfo {
 
-    private final Utils.IOSupplier<IMappingFile> mappings;
+    private final IOSupplier<IMappingFile> mappings;
 
-    public SrgMappingInfo(String channel, String version, File file, HashStore cache, Utils.IOSupplier<IMappingFile> mappings) {
+    public SrgMappingInfo(String channel, String version, File file, HashStore cache, IOSupplier<IMappingFile> mappings) {
         super(channel, version, file, cache, (destination) -> MCPZipGenerator.writeMCPZip(destination, new MappingFileInfo(mappings.get())));
 
         this.mappings = mappings;
@@ -24,12 +24,12 @@ public class SrgMappingInfo extends CachableMappingInfo {
         return input.chain(mappings.get());
     }
 
-    public static class CachingIOSupplier<T> implements Utils.IOSupplier<T> {
+    public static class CachingIOSupplier<T> implements IOSupplier<T> {
 
-        private Utils.IOSupplier<T> generator;
+        private IOSupplier<T> generator;
         private T result;
 
-        public CachingIOSupplier(Utils.IOSupplier<T> generator) {
+        public CachingIOSupplier(IOSupplier<T> generator) {
             this.generator = generator;
         }
 

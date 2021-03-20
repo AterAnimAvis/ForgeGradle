@@ -22,6 +22,10 @@ public class MappingProviders {
         String channel = mapping.substring(0, idx);
         String version = mapping.substring(idx + 1);
 
+        return getInfo(project, channel, version);
+    }
+
+    public static IMappingInfo getInfo(Project project, String channel, String version) throws IOException {
         final IMappingProvider provider = MappingProviders.getProvider(project, channel);
         if (provider == null) {
             throw new IllegalArgumentException("Unknown mapping provider for channel: " + channel);
@@ -29,7 +33,7 @@ public class MappingProviders {
 
         final IMappingInfo info = provider.getMappingInfo(project, channel, version);
         if (info == null) {
-            throw new IllegalArgumentException("Couldn't get mapping info: " + mapping);
+            throw new IllegalArgumentException("Couldn't get mapping info: " + channel + "_" + version);
         }
 
         return info;

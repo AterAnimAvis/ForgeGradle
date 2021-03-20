@@ -1,2 +1,2 @@
-net.minecraftforge.gradle.mcp.mapping.impl.OfficialMappingProvider
-net.minecraftforge.gradle.mcp.mapping.impl.MCPMappingProvider
+net.minecraftforge.gradle.mcp.mapping.providers.OfficialMappingProvider
+net.minecraftforge.gradle.mcp.mapping.providers.MCPMappingProvider

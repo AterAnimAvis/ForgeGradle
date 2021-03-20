@@ -274,11 +274,6 @@ public class Utils {
         public void accept(T value) throws IOException;
     }
 
-    @FunctionalInterface
-    public static interface IOSupplier<T> {
-        public T get() throws IOException;
-    }
-
     /**
      * Resolves the supplied object to a string.
      * If the input is null, this will return null.

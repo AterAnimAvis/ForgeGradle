@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping.impl;
+package net.minecraftforge.gradle.mcp.mapping.providers;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -11,10 +11,7 @@ import net.minecraftforge.gradle.common.util.HashFunction;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
 import net.minecraftforge.gradle.common.util.Utils;
-import net.minecraftforge.gradle.mcp.mapping.api.CachableMappingInfo;
-import net.minecraftforge.gradle.mcp.mapping.api.SrgMappingInfo;
-import net.minecraftforge.gradle.mcp.mapping.api.generator.MappingFileInfo;
-import net.minecraftforge.gradle.mcp.mapping.api.generator.MCPZipGenerator;
+import net.minecraftforge.gradle.mcp.mapping.api.impl.SrgMappingInfo;
 import net.minecraftforge.gradle.mcp.mapping.utils.MappingMerger;
 import net.minecraftforge.gradle.mcp.mapping.api.IMappingInfo;
 import net.minecraftforge.gradle.mcp.mapping.api.IMappingProvider;

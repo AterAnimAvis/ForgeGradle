@@ -23,7 +23,7 @@ public class MCPZipGenerator {
 
     public static void writeMCPZip(File outputZip, IMappingFileInfo mappings) throws IOException {
         // Can't just check isFile as it returns false if the File doesn't exist
-        Preconditions.checkArgument(outputZip.toPath().getFileName().toString().contains("."), "Output zip must be a file");
+        Preconditions.checkArgument(!outputZip.exists() || outputZip.isFile(), "Output zip must be a file");
         if (outputZip.exists() && !outputZip.delete()) {
             throw new IOException("Could not delete existing file " + outputZip);
         }
