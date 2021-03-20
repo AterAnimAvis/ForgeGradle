@@ -1,11 +1,11 @@
-package net.minecraftforge.gradle.mcp.mapping.info;
+package net.minecraftforge.gradle.mcp.mapping.detail;
 
 import java.util.Map;
 import javax.annotation.Nullable;
 
-import net.minecraftforge.gradle.mcp.mapping.IMappingInfo;
+import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
 
-public class Node implements IMappingInfo.IDocumentedNode {
+public class Node implements IMappingDetail.IDocumentedNode {
     private final String original;
     private final String mapped;
     private final Map<String, String> meta;

@@ -17,10 +17,14 @@ import net.minecraftforge.gradle.common.util.HashFunction;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
 import net.minecraftforge.gradle.common.util.Utils;
+import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
 import net.minecraftforge.gradle.mcp.mapping.IMappingInfo;
 import net.minecraftforge.gradle.mcp.mapping.IMappingProvider;
+import net.minecraftforge.gradle.mcp.mapping.Sides;
+import net.minecraftforge.gradle.mcp.mapping.detail.MappingDetail;
+import net.minecraftforge.gradle.mcp.mapping.detail.Node;
+import net.minecraftforge.gradle.mcp.mapping.generator.MappingZipGenerator;
 import net.minecraftforge.gradle.mcp.mapping.info.MappingInfo;
-import net.minecraftforge.gradle.mcp.mapping.info.Node;
 import net.minecraftforge.srgutils.IMappingFile;
 
 public class OfficialMappingProvider implements IMappingProvider {
@@ -107,21 +111,21 @@ public class OfficialMappingProvider implements IMappingProvider {
                 }
             }
 
-            List<IMappingInfo.IDocumentedNode> fields = new ArrayList<>();
-            List<IMappingInfo.IDocumentedNode> methods = new ArrayList<>();
+            List<IMappingDetail.IDocumentedNode> fields = new ArrayList<>();
+            List<IMappingDetail.IDocumentedNode> methods = new ArrayList<>();
 
-            Map<String, String> clientMeta = ImmutableMap.of("side", "2");
-            Map<String, String> serverMeta = ImmutableMap.of("side", "1");
-            Map<String, String> bothMeta = ImmutableMap.of("side", "0");
+            Map<String, String> bothMeta = ImmutableMap.of("side", Sides.BOTH);
+            Map<String, String> serverMeta = ImmutableMap.of("side", Sides.SERVER);
+            Map<String, String> clientMeta = ImmutableMap.of("side", Sides.CLIENT);
 
             for (String name : clientFields.keySet()) {
                 String cname = clientFields.get(name);
                 String sname = serverFields.get(name);
                 if (cname.equals(sname)) {
-                    fields.add(new Node(name, cname, clientMeta, null));
+                    fields.add(new Node(name, cname, bothMeta, null));
                     serverFields.remove(name);
                 } else {
-                    fields.add(new Node(name, cname, bothMeta, null));
+                    fields.add(new Node(name, cname, clientMeta, null));
                 }
             }
 
@@ -129,27 +133,33 @@ public class OfficialMappingProvider implements IMappingProvider {
                 String cname = clientMethods.get(name);
                 String sname = serverMethods.get(name);
                 if (cname.equals(sname)) {
-                    fields.add(new Node(name, cname, clientMeta, null));
+                    fields.add(new Node(name, cname, bothMeta, null));
                     serverMethods.remove(name);
                 } else {
-                    fields.add(new Node(name, cname, bothMeta, null));
+                    fields.add(new Node(name, cname, clientMeta, null));
                 }
             }
 
             serverFields.forEach((k, v) -> fields.add(new Node(k, v, serverMeta, null)));
             serverMethods.forEach((k, v) -> methods.add(new Node(k, v, serverMeta, null)));
 
-            if (mappings.getParentFile() != null && !mappings.getParentFile().exists())
-                //noinspection ResultOfMethodCallIgnored
-                mappings.getParentFile().mkdirs();
+            IMappingDetail detail = new MappingDetail(Collections.emptyList(), fields, methods, Collections.emptyList());
+
+            MappingZipGenerator.generate(mappings, detail);
 
             cache.save();
             Utils.updateHash(mappings, HashFunction.SHA1);
 
-            return new MappingInfo(channel, version, mappings, Collections.emptyList(), fields, methods, Collections.emptyList());
+            // channel, version, mappings, cache,
+            return new MappingInfo(channel, version, mappings, detail);
         }
 
-        return null; // TODO: STUB
+        return new MappingInfo(channel, version, mappings);
+    }
+
+    @Override
+    public String toString() {
+        return "Official Mappings";
     }
 
     private File findRenames(Project project, String classifier, IMappingFile.Format format, String version, boolean toObf) throws IOException {

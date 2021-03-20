@@ -348,22 +348,7 @@ public class MCPRepo extends BaseRepo {
     }
 
     private File findNames(String mapping) throws IOException {
-        int idx = mapping.lastIndexOf('_');
-        if (idx == -1) return null; //Invalid format
-        String channel = mapping.substring(0, idx);
-        String version = mapping.substring(idx + 1);
-
-        final IMappingProvider provider = MappingProviders.getProvider(channel);
-        if (provider == null) {
-            throw new IllegalArgumentException("Unknown mapping provider: " + mapping);
-        }
-
-        final IMappingInfo info = provider.getMappingInfo(project, channel, version);
-        if (info == null) {
-            throw new IllegalArgumentException("Couldn't get mapping info: " + mapping);
-        }
-
-        return info.get();
+        return MappingProviders.getInfo(project, mapping).get();
     }
 
     private McpNames loadMCPNames(String name, File data) throws IOException {

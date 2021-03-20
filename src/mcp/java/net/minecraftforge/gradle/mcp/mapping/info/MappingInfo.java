@@ -2,28 +2,27 @@ package net.minecraftforge.gradle.mcp.mapping.info;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
 
+import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
 import net.minecraftforge.gradle.mcp.mapping.IMappingInfo;
+import net.minecraftforge.gradle.mcp.mapping.detail.MappingDetail;
 
 public class MappingInfo implements IMappingInfo {
-    private final String channel;
-    private final String version;
-    private final Collection<IDocumentedNode> classes;
-    private final Collection<IDocumentedNode> fields;
-    private final Collection<IDocumentedNode> methods;
-    private final Collection<INode> params;
-    private final File destination;
 
-    public MappingInfo(String channel, String version, File destination, Collection<IDocumentedNode> classes, Collection<IDocumentedNode> fields, Collection<IDocumentedNode> methods, Collection<INode> params) {
+    protected final String channel;
+    protected final String version;
+    protected final File destination;
+    protected final IMappingDetail detail;
+
+    public MappingInfo(String channel, String version, File destination) throws IOException {
+        this(channel, version, destination, MappingDetail.fromZip(destination));
+    }
+
+    public MappingInfo(String channel, String version, File destination, IMappingDetail detail) {
         this.channel = channel;
         this.version = version;
         this.destination = destination;
-        this.classes = classes;
-        this.fields = fields;
-        this.methods = methods;
-        this.params = params;
+        this.detail = detail;
     }
 
     @Override
@@ -38,8 +37,6 @@ public class MappingInfo implements IMappingInfo {
 
     @Override
     public File get() throws IOException {
-        IMappingInfo.writeMCPZip(destination, this); //TODO: Caching
-
         return destination;
     }
 
@@ -49,22 +46,7 @@ public class MappingInfo implements IMappingInfo {
     }
 
     @Override
-    public Iterator<IDocumentedNode> getClasses() {
-        return classes.iterator();
-    }
-
-    @Override
-    public Iterator<IDocumentedNode> getFields() {
-        return fields.iterator();
-    }
-
-    @Override
-    public Iterator<IDocumentedNode> getMethods() {
-        return methods.iterator();
-    }
-
-    @Override
-    public Iterator<INode> getParameters() {
-        return params.iterator();
+    public IMappingDetail getDetails() {
+        return detail;
     }
 }
