@@ -20,40 +20,6 @@
 
 package net.minecraftforge.gradle.mcp;
 
-import net.minecraftforge.artifactural.api.artifact.ArtifactIdentifier;
-import net.minecraftforge.artifactural.api.repository.ArtifactProvider;
-import net.minecraftforge.artifactural.api.repository.Repository;
-import net.minecraftforge.artifactural.base.repository.ArtifactProviderBuilder;
-import net.minecraftforge.artifactural.base.repository.SimpleRepository;
-import net.minecraftforge.artifactural.gradle.GradleRepositoryAdapter;
-import com.google.common.collect.Maps;
-
-import de.siegmar.fastcsv.writer.CsvWriter;
-import de.siegmar.fastcsv.writer.LineDelimiter;
-import net.minecraftforge.gradle.common.util.BaseRepo;
-import net.minecraftforge.gradle.common.util.HashFunction;
-import net.minecraftforge.gradle.common.util.HashStore;
-import net.minecraftforge.gradle.common.util.ManifestJson;
-import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
-import net.minecraftforge.gradle.common.util.McpNames;
-import net.minecraftforge.gradle.common.util.MinecraftRepo;
-import net.minecraftforge.gradle.common.util.POMBuilder;
-import net.minecraftforge.gradle.common.util.Utils;
-import net.minecraftforge.gradle.common.util.VersionJson;
-import net.minecraftforge.gradle.mcp.mapping.IMappingProvider;
-import net.minecraftforge.gradle.mcp.mapping.MappingProviders;
-import net.minecraftforge.gradle.mcp.util.MCPRuntime;
-import net.minecraftforge.gradle.mcp.util.MCPWrapper;
-import net.minecraftforge.srgutils.IMappingFile;
-import net.minecraftforge.srgutils.IRenamer;
-import net.minecraftforge.srgutils.IMappingFile.IClass;
-import net.minecraftforge.srgutils.IMappingFile.IField;
-import net.minecraftforge.srgutils.IMappingFile.IMethod;
-
-import org.apache.commons.io.FileUtils;
-import org.gradle.api.Project;
-import org.gradle.api.logging.Logger;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -68,32 +34,46 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.zip.ZipOutputStream;
 
+import com.google.common.collect.Maps;
+import org.apache.commons.io.FileUtils;
+import org.gradle.api.Project;
+import org.gradle.api.logging.Logger;
+import de.siegmar.fastcsv.writer.CsvWriter;
+import de.siegmar.fastcsv.writer.LineDelimiter;
+import net.minecraftforge.artifactural.api.artifact.ArtifactIdentifier;
+import net.minecraftforge.artifactural.api.repository.ArtifactProvider;
+import net.minecraftforge.artifactural.api.repository.Repository;
+import net.minecraftforge.artifactural.base.repository.ArtifactProviderBuilder;
+import net.minecraftforge.artifactural.base.repository.SimpleRepository;
+import net.minecraftforge.artifactural.gradle.GradleRepositoryAdapter;
+import net.minecraftforge.gradle.common.util.BaseRepo;
+import net.minecraftforge.gradle.common.util.HashFunction;
+import net.minecraftforge.gradle.common.util.HashStore;
+import net.minecraftforge.gradle.common.util.ManifestJson;
+import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
+import net.minecraftforge.gradle.common.util.McpNames;
+import net.minecraftforge.gradle.common.util.MinecraftRepo;
+import net.minecraftforge.gradle.common.util.POMBuilder;
+import net.minecraftforge.gradle.common.util.Utils;
+import net.minecraftforge.gradle.common.util.VersionJson;
+import net.minecraftforge.gradle.mcp.mapping.IMappingInfo;
+import net.minecraftforge.gradle.mcp.mapping.IMappingProvider;
+import net.minecraftforge.gradle.mcp.mapping.MappingProviders;
+import net.minecraftforge.gradle.mcp.util.MCPRuntime;
+import net.minecraftforge.gradle.mcp.util.MCPWrapper;
+import net.minecraftforge.srgutils.IMappingFile;
+import net.minecraftforge.srgutils.IMappingFile.IClass;
+import net.minecraftforge.srgutils.IMappingFile.IField;
+import net.minecraftforge.srgutils.IMappingFile.IMethod;
+import net.minecraftforge.srgutils.IRenamer;
+
 /**
  * Provides the following artifacts:
- *
- * net.minecraft:
- *   client:
- *     MCPVersion:
- *       srg - Srg named SLIM jar file.
- *       srg-sources - Srg named decompiled/patched code.
- *   server:
- *     MCPVersion:
- *       srg - Srg named SLIM jar file.
- *       srg-sources - Srg named decompiled/patched code.
- *   joined:
- *     MCPVersion:
- *       .pom - Pom meta linking against net.minecraft:client:extra and net.minecraft:client:data
- *       '' - Notch named merged jar file
- *       srg - Srg named jar file.
- *       srg-sources - Srg named decompiled/patched code.
- *   mappings_{channel}:
- *     MCPVersion|MCVersion:
- *       .zip - A zip file containing SRG -> Human readable field and method mappings.
- *         Current supported channels:
- *         'stable', 'snapshot': MCP's crowdsourced mappings.
- *         'official': Official mappings released by Mojang.
- *
- *   Note: It does NOT provide the Obfed named jars for server and client, as that is provided by MinecraftRepo.
+ * <p>
+ * net.minecraft: client: MCPVersion: srg - Srg named SLIM jar file. srg-sources - Srg named decompiled/patched code. server: MCPVersion: srg - Srg named SLIM jar file. srg-sources - Srg named decompiled/patched code. joined: MCPVersion: .pom - Pom meta linking against net.minecraft:client:extra and net.minecraft:client:data '' - Notch named merged jar file srg - Srg named jar file. srg-sources -
+ * Srg named decompiled/patched code. mappings_{channel}: MCPVersion|MCVersion: .zip - A zip file containing SRG -> Human readable field and method mappings. Current supported channels: 'stable', 'snapshot': MCP's crowdsourced mappings. 'official': Official mappings released by Mojang.
+ * <p>
+ * Note: It does NOT provide the Obfed named jars for server and client, as that is provided by MinecraftRepo.
  */
 public class MCPRepo extends BaseRepo {
     private static MCPRepo INSTANCE = null;
@@ -106,6 +86,7 @@ public class MCPRepo extends BaseRepo {
 
     //This is the artifact we expose that is a zip containing SRG->Official fields and methods.
     public static final String MAPPING_DEP = "net.minecraft:mappings_{CHANNEL}:{VERSION}@zip";
+
     public static String getMappingDep(String channel, String version) {
         return MAPPING_DEP.replace("{CHANNEL}", channel).replace("{VERSION}", version);
     }
@@ -128,6 +109,7 @@ public class MCPRepo extends BaseRepo {
             INSTANCE = new MCPRepo(project, Utils.getCache(project, "mcp_repo"), project.getLogger());
         return INSTANCE;
     }
+
     public static void attach(Project project) {
         MCPRepo instance = getInstance(project);
         GradleRepositoryAdapter.add(project.getRepositories(), "MCP_DYNAMIC", instance.getCacheRoot(), instance.repo);
@@ -148,6 +130,7 @@ public class MCPRepo extends BaseRepo {
             return cache("de", "oceanlabs", "mcp", "mcp_config", version, "mcp_config-" + version + '-' + classifier + '.' + ext);
         return cache("de", "oceanlabs", "mcp", "mcp_config", version, "mcp_config-" + version + '.' + ext);
     }
+
     private File cacheMCP(String version) {
         return cache("de", "oceanlabs", "mcp", "mcp_config", version);
     }
@@ -183,9 +166,12 @@ public class MCPRepo extends BaseRepo {
                 return findPom(name, version);
             } else {
                 switch (classifier) {
-                    case "":              return findRaw(name, version);
-                    case "srg":           return findSrg(name, version);
-                    case "extra":         return findExtra(name, version);
+                    case "":
+                        return findRaw(name, version);
+                    case "srg":
+                        return findSrg(name, version);
+                    case "extra":
+                        return findExtra(name, version);
                 }
             }
         } else if (group.equals(GROUP_MCP)) {
@@ -223,7 +209,7 @@ public class MCPRepo extends BaseRepo {
         Utils.updateHash(manifest);
         File json = cache("versions", version, "version.json");
 
-        URL url =  Utils.loadJson(manifest, ManifestJson.class).getUrl(version);
+        URL url = Utils.loadJson(manifest, ManifestJson.class).getUrl(version);
         if (url == null)
             throw new RuntimeException("Missing version from manifest: " + version);
 
@@ -321,7 +307,7 @@ public class MCPRepo extends BaseRepo {
             } catch (Exception e) {
                 e.printStackTrace();
                 log.lifecycle(e.getMessage());
-                if (e instanceof RuntimeException) throw (RuntimeException)e;
+                if (e instanceof RuntimeException) throw (RuntimeException) e;
                 throw new RuntimeException(e);
             }
         }
@@ -331,7 +317,7 @@ public class MCPRepo extends BaseRepo {
     private synchronized MCPWrapper getWrapper(String version, File data) throws IOException {
         String hash = HashFunction.SHA1.hash(data);
         MCPWrapper ret = wrappers.get(version);
-        if (ret == null  || !hash.equals(ret.getHash())) {
+        if (ret == null || !hash.equals(ret.getHash())) {
             ret = new MCPWrapper(hash, data, cacheMCP(version));
             wrappers.put(version, ret);
         }
@@ -372,15 +358,12 @@ public class MCPRepo extends BaseRepo {
             throw new IllegalArgumentException("Unknown mapping provider: " + mapping);
         }
 
-        if ("official".equals(channel)) {
-            return findOfficialMapping(version);
-        } else if ("snapshot".equals(channel) || "snapshot_nodoc".equals(channel) || "stable".equals(channel) || "stable_nodoc".equals(channel)) { //MCP
-            String desc = "de.oceanlabs.mcp:mcp_" + channel + ":" + version + "@zip";
-            debug("    Mapping: " + desc);
-            return MavenArtifactDownloader.manual(project, desc, false);
+        final IMappingInfo info = provider.getMappingInfo(project, channel, version);
+        if (info == null) {
+            throw new IllegalArgumentException("Couldn't get mapping info: " + mapping);
         }
-        //TODO? Yarn/Other crowdsourcing?
-        throw new IllegalArgumentException("Unknown mapping provider: " + mapping);
+
+        return info.get();
     }
 
     private McpNames loadMCPNames(String name, File data) throws IOException {
@@ -441,9 +424,9 @@ public class MCPRepo extends BaseRepo {
 
         File extra = cacheMC(side, version, "extra", "jar");
         HashStore cache = commonHash(mcp).load(cacheMC(side, version, "extra", "jar.input"))
-                .add("raw", raw)
-                .add("mcp", mcp)
-                .add("codever", "1");
+            .add("raw", raw)
+            .add("mcp", mcp)
+            .add("codever", "1");
 
         if (!cache.isSame() || !extra.exists()) {
             MCPWrapper wrapper = getWrapper(version, mcp);
@@ -477,11 +460,11 @@ public class MCPRepo extends BaseRepo {
 
         File mappings = cacheMC("mapping", mcpversion, "mapping", "zip");
         HashStore cache = commonHash(mcp)
-                .load( cacheMC("mapping", mcpversion, "mapping", "zip.input"))
-                .add("pg_client", client)
-                .add("pg_server", server)
-                .add("tsrg", tsrg)
-                .add("codever", "1");
+            .load(cacheMC("mapping", mcpversion, "mapping", "zip.input"))
+            .add("pg_client", client)
+            .add("pg_server", server)
+            .add("tsrg", tsrg)
+            .add("codever", "1");
 
         if (!cache.isSame() || !mappings.exists()) {
             IMappingFile pg_client = IMappingFile.load(client);
@@ -538,24 +521,24 @@ public class MCPRepo extends BaseRepo {
                 String cname = cfields.get(name);
                 String sname = sfields.get(name);
                 if (cname.equals(sname)) {
-                    fields.add(new String[]{name, cname, "2", ""});
+                    fields.add(new String[] {name, cname, "2", ""});
                     sfields.remove(name);
                 } else
-                    fields.add(new String[]{name, cname, "0", ""});
+                    fields.add(new String[] {name, cname, "0", ""});
             }
 
             for (String name : cmethods.keySet()) {
                 String cname = cmethods.get(name);
                 String sname = smethods.get(name);
                 if (cname.equals(sname)) {
-                    methods.add(new String[]{name, cname, "2", ""});
+                    methods.add(new String[] {name, cname, "2", ""});
                     smethods.remove(name);
                 } else
-                    methods.add(new String[]{name, cname, "0", ""});
+                    methods.add(new String[] {name, cname, "0", ""});
             }
 
-            sfields.forEach((k,v) -> fields.add(new String[] {k, v, "1", ""}));
-            smethods.forEach((k,v) -> methods.add(new String[] {k, v, "1", ""}));
+            sfields.forEach((k, v) -> fields.add(new String[] {k, v, "1", ""}));
+            smethods.forEach((k, v) -> methods.add(new String[] {k, v, "1", ""}));
 
             if (!mappings.getParentFile().exists())
                 mappings.getParentFile().mkdirs();
@@ -579,7 +562,6 @@ public class MCPRepo extends BaseRepo {
             cache.save();
             Utils.updateHash(mappings, HashFunction.SHA1);
         }
-
 
         return mappings;
     }

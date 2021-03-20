@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping;
+package net.minecraftforge.gradle.mcp.mapping.provider;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -11,13 +11,17 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.google.common.collect.ImmutableMap;
+import org.gradle.api.Project;
 import net.minecraftforge.gradle.common.config.MCPConfigV2;
 import net.minecraftforge.gradle.common.util.HashFunction;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
 import net.minecraftforge.gradle.common.util.Utils;
+import net.minecraftforge.gradle.mcp.mapping.IMappingInfo;
+import net.minecraftforge.gradle.mcp.mapping.IMappingProvider;
+import net.minecraftforge.gradle.mcp.mapping.info.MappingInfo;
+import net.minecraftforge.gradle.mcp.mapping.info.Node;
 import net.minecraftforge.srgutils.IMappingFile;
-import org.gradle.api.Project;
 
 public class OfficialMappingProvider implements IMappingProvider {
     @Override
@@ -26,7 +30,7 @@ public class OfficialMappingProvider implements IMappingProvider {
     }
 
     @Override
-    public IMappingInfo getMappingInfo(Project project, String channel, String version) throws Exception {
+    public IMappingInfo getMappingInfo(Project project, String channel, String version) throws IOException {
         String mcVersion = version;
         int idx = mcVersion.lastIndexOf('-');
         if (idx != -1 && mcVersion.substring(idx + 1).matches("\\d{8}\\.\\d{6}")) {
@@ -49,11 +53,11 @@ public class OfficialMappingProvider implements IMappingProvider {
 
         File mappings = cacheMC(project, "mapping", version, "mapping", "zip");
         HashStore cache = commonHash(project, mcp)
-                .load(cacheMC(project, "mapping", version, "mapping", "zip.input"))
-                .add("pg_client", clientPG)
-                .add("pg_server", serverPG)
-                .add("tsrg", tsrgFile)
-                .add("codever", "1");
+            .load(cacheMC(project, "mapping", version, "mapping", "zip.input"))
+            .add("pg_client", clientPG)
+            .add("pg_server", serverPG)
+            .add("tsrg", tsrgFile)
+            .add("codever", "1");
 
         if (!cache.isSame() || !mappings.exists()) {
             // Note: IMappingFile from PG file has getMapped() as obfuscated name and getOriginal() as original name
@@ -114,10 +118,10 @@ public class OfficialMappingProvider implements IMappingProvider {
                 String cname = clientFields.get(name);
                 String sname = serverFields.get(name);
                 if (cname.equals(sname)) {
-                    fields.add(new MappingInfo.Node(name, cname, clientMeta, null));
+                    fields.add(new Node(name, cname, clientMeta, null));
                     serverFields.remove(name);
                 } else {
-                    fields.add(new MappingInfo.Node(name, cname, bothMeta, null));
+                    fields.add(new Node(name, cname, bothMeta, null));
                 }
             }
 
@@ -125,15 +129,15 @@ public class OfficialMappingProvider implements IMappingProvider {
                 String cname = clientMethods.get(name);
                 String sname = serverMethods.get(name);
                 if (cname.equals(sname)) {
-                    fields.add(new MappingInfo.Node(name, cname, clientMeta, null));
+                    fields.add(new Node(name, cname, clientMeta, null));
                     serverMethods.remove(name);
                 } else {
-                    fields.add(new MappingInfo.Node(name, cname, bothMeta, null));
+                    fields.add(new Node(name, cname, bothMeta, null));
                 }
             }
 
-            serverFields.forEach((k, v) -> fields.add(new MappingInfo.Node(k, v, serverMeta, null)));
-            serverMethods.forEach((k, v) -> methods.add(new MappingInfo.Node(k, v, serverMeta, null)));
+            serverFields.forEach((k, v) -> fields.add(new Node(k, v, serverMeta, null)));
+            serverMethods.forEach((k, v) -> methods.add(new Node(k, v, serverMeta, null)));
 
             if (mappings.getParentFile() != null && !mappings.getParentFile().exists())
                 //noinspection ResultOfMethodCallIgnored
@@ -142,7 +146,7 @@ public class OfficialMappingProvider implements IMappingProvider {
             cache.save();
             Utils.updateHash(mappings, HashFunction.SHA1);
 
-            return new MappingInfo(channel, version, Collections.emptyList(), fields, methods, Collections.emptyList());
+            return new MappingInfo(channel, version, mappings, Collections.emptyList(), fields, methods, Collections.emptyList());
         }
 
         return null; // TODO: STUB
@@ -196,6 +200,6 @@ public class OfficialMappingProvider implements IMappingProvider {
 
     private HashStore commonHash(Project project, File mcp) {
         return new HashStore(Utils.getCache(project, "mcp_repo"))  // TODO: remove hardcoded cache root
-                .add("mcp", mcp);
+            .add("mcp", mcp);
     }
 }
