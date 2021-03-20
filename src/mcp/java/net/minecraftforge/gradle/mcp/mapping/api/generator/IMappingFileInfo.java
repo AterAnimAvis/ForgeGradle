@@ -5,6 +5,7 @@ import java.util.Collection;
 import net.minecraftforge.gradle.mcp.mapping.api.Constants;
 import net.minecraftforge.srgutils.IMappingFile;
 
+//TODO: Raise this up to ICachableMappingFile ?
 public interface IMappingFileInfo {
 
     default String getJavadocForNode(IMappingFile.INode node) {

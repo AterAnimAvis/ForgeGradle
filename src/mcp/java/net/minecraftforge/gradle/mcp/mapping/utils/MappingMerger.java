@@ -18,10 +18,22 @@ public class MappingMerger {
     private static final String RIGHT = "right";
     private static final String SIDE = "side";
 
+    public static IMappingFile merge(IMappingFile... mappings) {
+        MappingBuilder builder = new MappingBuilder();
+
+        Map<String, String> EMPTY = new HashMap<>();
+
+        for (IMappingFile mapping : mappings) {
+            builder.inject(mapping, EMPTY, EMPTY, EMPTY, EMPTY);
+        }
+
+        return builder.build();
+    }
+
     /**
      * Expects SRG -> OBF
      */
-    public static IMappingFile merge(IMappingFile client, IMappingFile server) {
+    public static IMappingFile mergeSided(IMappingFile mapped, IMappingFile client, IMappingFile server) {
         MappingBuilder builder = new MappingBuilder();
 
         Map<String, String> classes = calculateSides(
@@ -44,8 +56,7 @@ public class MappingMerger {
             MappingStreams.getParameters(server).filter(MappingStreams::isSrg)
         );
 
-        builder.inject(client, classes, fields, methods, params);
-        builder.inject(server, classes, fields, methods, params);
+        builder.inject(mapped, classes, fields, methods, params);
 
         return builder.build();
     }

@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
 import org.gradle.api.Project;
+import net.minecraftforge.gradle.mcp.mapping.api.IMappingFileProvider;
 import net.minecraftforge.gradle.mcp.mapping.api.IMappingInfo;
 import net.minecraftforge.gradle.mcp.mapping.api.IMappingProvider;
 
@@ -50,6 +51,13 @@ public class MappingProviders {
                 return provider;
             }
         }
+
+        log.accept("Considering IMappingFile Providers for " + channel);
+        final IMappingFileProvider provider = MappingFileProviders.get(project, channel);
+        if (provider != null) {
+            return provider.wrap();
+        }
+
         return null;
     }
 }

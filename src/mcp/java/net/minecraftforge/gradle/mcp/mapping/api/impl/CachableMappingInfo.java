@@ -6,13 +6,14 @@ import java.io.IOException;
 import net.minecraftforge.gradle.common.util.HashFunction;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.Utils;
+import net.minecraftforge.gradle.common.util.func.IOConsumer;
 
 public class CachableMappingInfo extends MappingInfo {
 
     private final HashStore cache;
-    private final Utils.IOConsumer<File> generator;
+    private final IOConsumer<File> generator;
 
-    public CachableMappingInfo(String channel, String version, File file, HashStore cache, Utils.IOConsumer<File> generator) {
+    public CachableMappingInfo(String channel, String version, File file, HashStore cache, IOConsumer<File> generator) {
         super(channel, version, file);
         this.cache = cache;
         this.generator = generator;

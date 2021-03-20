@@ -264,14 +264,23 @@ public class Utils {
         }
     }
 
+    /**
+     * TODO: CLEANUP THIS DEPRECATION
+     * To be changed in FG 4.2 to take {@link net.minecraftforge.gradle.common.util.func.IOConsumer}
+     */
     public static void forZip(ZipFile zip, IOConsumer<ZipEntry> consumer) throws IOException {
         for (Enumeration<? extends ZipEntry> entries = zip.entries(); entries.hasMoreElements();) {
             consumer.accept(entries.nextElement());
         }
     }
+
+    /**
+     * @deprecated To be removed in FG 4.2, see {@link net.minecraftforge.gradle.common.util.func.IOConsumer}
+     */
+    @Deprecated
     @FunctionalInterface
-    public static interface IOConsumer<T> {
-        public void accept(T value) throws IOException;
+    public static interface IOConsumer<T> extends net.minecraftforge.gradle.common.util.func.IOConsumer<T> {
+
     }
 
     /**

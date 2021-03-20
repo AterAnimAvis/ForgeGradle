@@ -1,0 +1,2 @@
+net.minecraftforge.gradle.mcp.mapping.providers.file.OfficialMappingFileProvider
+net.minecraftforge.gradle.mcp.mapping.providers.file.ExampleMappingFileProvider

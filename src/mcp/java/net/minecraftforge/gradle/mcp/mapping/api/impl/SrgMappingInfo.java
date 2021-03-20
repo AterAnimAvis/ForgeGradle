@@ -19,28 +19,12 @@ public class SrgMappingInfo extends CachableMappingInfo {
         this.mappings = mappings;
     }
 
+    public IOSupplier<IMappingFile> getMappings() {
+        return mappings;
+    }
+
     @Override
     public IMappingFile applyMappings(IMappingFile input) throws IOException {
         return input.chain(mappings.get());
-    }
-
-    public static class CachingIOSupplier<T> implements IOSupplier<T> {
-
-        private IOSupplier<T> generator;
-        private T result;
-
-        public CachingIOSupplier(IOSupplier<T> generator) {
-            this.generator = generator;
-        }
-
-        @Override
-        public T get() throws IOException {
-            if (generator != null) {
-                result = generator.get();
-                generator = null;
-            }
-
-            return result;
-        }
     }
 }
