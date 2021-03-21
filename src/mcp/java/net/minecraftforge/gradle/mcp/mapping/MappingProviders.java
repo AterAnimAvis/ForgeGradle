@@ -34,7 +34,7 @@ public class MappingProviders {
 
     @Nullable
     public static IMappingProvider getProvider(Project project, String channel) {
-        //TODO: Logging via project
+        //TODO: Change Logging Level
 
         project.getLogger().lifecycle("Looking for: " + channel);
         for (IMappingProvider provider : LOADER) {

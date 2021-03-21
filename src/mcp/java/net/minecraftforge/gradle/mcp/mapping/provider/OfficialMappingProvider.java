@@ -3,31 +3,21 @@ package net.minecraftforge.gradle.mcp.mapping.provider;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
-import com.google.common.collect.ImmutableMap;
 import org.gradle.api.Project;
 import net.minecraftforge.gradle.common.config.MCPConfigV2;
 import net.minecraftforge.gradle.common.util.HashFunction;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
 import net.minecraftforge.gradle.common.util.Utils;
-import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
 import net.minecraftforge.gradle.mcp.mapping.IMappingInfo;
-import net.minecraftforge.gradle.mcp.mapping.IMappingProvider;
-import net.minecraftforge.gradle.mcp.mapping.Sides;
 import net.minecraftforge.gradle.mcp.mapping.detail.MappingDetail;
-import net.minecraftforge.gradle.mcp.mapping.detail.Node;
-import net.minecraftforge.gradle.mcp.mapping.generator.MappingZipGenerator;
-import net.minecraftforge.gradle.mcp.mapping.info.MappingInfo;
 import net.minecraftforge.srgutils.IMappingFile;
 
-public class OfficialMappingProvider implements IMappingProvider {
+public class OfficialMappingProvider extends CachingProvider {
+    
     @Override
     public Collection<String> getMappingChannels() {
         return Collections.singleton("official");
@@ -63,98 +53,24 @@ public class OfficialMappingProvider implements IMappingProvider {
             .add("tsrg", tsrgFile)
             .add("codever", "1");
 
-        if (!cache.isSame() || !mappings.exists()) {
-            // Note: IMappingFile from PG file has getMapped() as obfuscated name and getOriginal() as original name
+        return fromCachable(channel, version, cache, mappings, () -> {
+            // PG file: [MAP -> OBF]
             IMappingFile pgClient = IMappingFile.load(clientPG);
             IMappingFile pgServer = IMappingFile.load(serverPG);
 
-            //Verify that the PG files merge, merge in MCPConfig, but doesn't hurt to double check here.
-            //And if we don't we need to write a handler to spit out correctly sided info.
-
-            // MCPConfig TSRG file: OBF -> SRG
+            // MCPConfig TSRG file: [OBF -> SRG]
             IMappingFile tsrg = IMappingFile.load(tsrgFile);
 
-            Map<String, String> clientFields = new TreeMap<>();
-            Map<String, String> serverFields = new TreeMap<>();
-            Map<String, String> clientMethods = new TreeMap<>();
-            Map<String, String> serverMethods = new TreeMap<>();
+            // Official: [SRG -> MAP]
+            //   Note: We chain of the tsrg so that we don't pick up none srg names
+            //   [OBF -> SRG] =reverse=> [SRG -> OBF]
+            //   [MAP -> SRG] =reverse=> [SRG -> MAP]
+            //   [SRG -> OBF] -chain-> [SRG -> MAP] ===> [SRG -> MAP]
+            IMappingFile client = tsrg.reverse().chain(pgClient.reverse());
+            IMappingFile server = tsrg.reverse().chain(pgServer.reverse());
 
-            for (IMappingFile.IClass cls : pgClient.getClasses()) {
-                IMappingFile.IClass obf = tsrg.getClass(cls.getMapped());
-                if (obf == null) // Class exists in official source, but doesn't make it past obfuscation so it's not in our mappings.
-                    continue;
-                for (IMappingFile.IField fld : cls.getFields()) {
-                    String name = obf.remapField(fld.getMapped());
-                    if (name.startsWith("field_"))
-                        clientFields.put(name, fld.getOriginal());
-                }
-                for (IMappingFile.IMethod mtd : cls.getMethods()) {
-                    String name = obf.remapMethod(mtd.getMapped(), mtd.getMappedDescriptor());
-                    if (name.startsWith("func_"))
-                        clientMethods.put(name, mtd.getOriginal());
-                }
-            }
-
-            for (IMappingFile.IClass cls : pgServer.getClasses()) {
-                IMappingFile.IClass obf = tsrg.getClass(cls.getMapped());
-                if (obf == null) // Class exists in official source, but doesn't make it past obfuscation so it's not in our mappings.
-                    continue;
-                for (IMappingFile.IField fld : cls.getFields()) {
-                    String name = obf.remapField(fld.getMapped());
-                    if (name.startsWith("field_"))
-                        serverFields.put(name, fld.getOriginal());
-                }
-                for (IMappingFile.IMethod mtd : cls.getMethods()) {
-                    String name = obf.remapMethod(mtd.getMapped(), mtd.getMappedDescriptor());
-                    if (name.startsWith("func_"))
-                        serverMethods.put(name, mtd.getOriginal());
-                }
-            }
-
-            List<IMappingDetail.IDocumentedNode> fields = new ArrayList<>();
-            List<IMappingDetail.IDocumentedNode> methods = new ArrayList<>();
-
-            Map<String, String> bothMeta = ImmutableMap.of("side", Sides.BOTH);
-            Map<String, String> serverMeta = ImmutableMap.of("side", Sides.SERVER);
-            Map<String, String> clientMeta = ImmutableMap.of("side", Sides.CLIENT);
-
-            for (String name : clientFields.keySet()) {
-                String cname = clientFields.get(name);
-                String sname = serverFields.get(name);
-                if (cname.equals(sname)) {
-                    fields.add(new Node(name, cname, bothMeta, null));
-                    serverFields.remove(name);
-                } else {
-                    fields.add(new Node(name, cname, clientMeta, null));
-                }
-            }
-
-            for (String name : clientMethods.keySet()) {
-                String cname = clientMethods.get(name);
-                String sname = serverMethods.get(name);
-                if (cname.equals(sname)) {
-                    fields.add(new Node(name, cname, bothMeta, null));
-                    serverMethods.remove(name);
-                } else {
-                    fields.add(new Node(name, cname, clientMeta, null));
-                }
-            }
-
-            serverFields.forEach((k, v) -> fields.add(new Node(k, v, serverMeta, null)));
-            serverMethods.forEach((k, v) -> methods.add(new Node(k, v, serverMeta, null)));
-
-            IMappingDetail detail = new MappingDetail(Collections.emptyList(), fields, methods, Collections.emptyList());
-
-            MappingZipGenerator.generate(mappings, detail);
-
-            cache.save();
-            Utils.updateHash(mappings, HashFunction.SHA1);
-
-            // channel, version, mappings, cache,
-            return new MappingInfo(channel, version, mappings, detail);
-        }
-
-        return new MappingInfo(channel, version, mappings);
+            return MappingDetail.fromSrg(client, server);
+        });
     }
 
     @Override
@@ -184,7 +100,8 @@ public class OfficialMappingProvider implements IMappingProvider {
         return file;
     }
 
-    private File getMCPConfigZip(Project project, String version) throws IOException {
+    //TODO: Move these up to `CachingProvider`
+    private File getMCPConfigZip(Project project, String version) {
         return MavenArtifactDownloader.manual(project, "de.oceanlabs.mcp:mcp_config:" + version + "@zip", false);
     }
 
