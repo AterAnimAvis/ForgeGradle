@@ -105,10 +105,6 @@ public class HashStore {
         return this;
     }
 
-    public HashStore add(String key, int data) {
-        return add(key, Integer.toString(data));
-    }
-
     public HashStore add(String key, String data) {
         newHashes.put(key, HashFunction.SHA1.hash(data));
         return this;

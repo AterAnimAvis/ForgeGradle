@@ -1,3 +1,0 @@
-net.minecraftforge.gradle.mcp.mapping.provider.McpMappingProvider
-net.minecraftforge.gradle.mcp.mapping.provider.OfficialMappingProvider
-net.minecraftforge.gradle.mcp.mapping.provider.example.OverlaidProvider

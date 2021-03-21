@@ -37,7 +37,6 @@ public abstract class CachingProvider implements IMappingProvider {
 
     protected File findRenames(Project project, String classifier, IMappingFile.Format format, String version, boolean toObf) throws IOException {
         String ext = format.name().toLowerCase();
-        //File names = findNames(version));
         File mcp = getMCPConfigZip(project, version);
         if (mcp == null)
             return null;

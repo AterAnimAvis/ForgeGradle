@@ -14,10 +14,8 @@ import net.minecraftforge.gradle.mcp.mapping.info.MappingInfo;
 
 public class McpMappingProvider implements IMappingProvider {
 
-    //TODO: Move this up to IMappingProvider?
     private void debug(Project project, String message) {
-        if (BaseRepo.DEBUG)
-            project.getLogger().lifecycle(message);
+        if (BaseRepo.DEBUG) project.getLogger().lifecycle(message);
     }
 
     @Override

@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.gradle.api.Project;
+import de.siegmar.fastcsv.reader.NamedCsvReader;
+import de.siegmar.fastcsv.reader.NamedCsvRow;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
 import net.minecraftforge.gradle.mcp.mapping.IMappingInfo;
@@ -32,30 +34,60 @@ public class OverlaidProvider extends CachingProvider {
     public IMappingInfo getMappingInfo(Project project, String channel, String version) throws IOException {
         IMappingInfo official = MappingProviders.getInfo(project, "official", version);
 
-        int rev = 0;
-        //TODO: Move actual Overlay System Here
+        String fields = "" +
+            "searge,name,side,desc\n" +
+            "field_71432_P,theAbyss,0,\"If you stare into the abyss, the abyss stares back\"\n";
+
+        String methods = "" +
+            "searge,name,side,desc\n" +
+            "func_71410_x,getHighlander,0,\"There can be only one\"\n";
+
+        String params = "" +
+            "param,name,side\n" +
+            "p_i45547_1_,configurationIn,0\n";
 
         File mappings = cacheMappings(project, channel, version, "zip");
         HashStore cache = commonHash(project)
             .load(cacheMappings(project, channel, version, "zip.input"))
             .add("official", official.get())
-            .add("mappings", rev)
+            .add("fields", fields)
+            .add("methods", methods)
+            .add("params", params)
             .add("codever", "1");
 
         return fromCachable(channel, version, cache, mappings, () -> {
             IMappingDetail detail = official.getDetails();
 
-            Map<String, IMappingDetail.IDocumentedNode> fields = new HashMap<>();
-            Map<String, IMappingDetail.INode> params = new HashMap<>();
+            Map<String, IMappingDetail.IDocumentedNode> fieldNodes = new HashMap<>();
+            Map<String, IMappingDetail.IDocumentedNode> methodNodes = new HashMap<>();
+            Map<String, IMappingDetail.INode> paramNodes = new HashMap<>();
 
-            detail.getFields().forEach(node -> fields.put(node.getOriginal(), node));
-            detail.getParameters().forEach(node -> params.put(node.getOriginal(), node));
+            detail.getFields().forEach(node -> fieldNodes.put(node.getOriginal(), node));
+            detail.getMethods().forEach(node -> methodNodes.put(node.getOriginal(), node));
+            detail.getParameters().forEach(node -> paramNodes.put(node.getOriginal(), node));
 
-            fields.compute("field_71432_P", (k, old) -> (old != null ? old : new Node(k)).withMapping("theTrueMinecraft").withJavadoc("Example JavaDoc"));
-            params.compute("p_i45547_1_", (k, old) -> (old != null ? old : new Node(k)).withMapping("configurationIn"));
+            apply(fields, fieldNodes);
+            apply(methods, methodNodes);
+            applyParams(params, paramNodes);
 
-            return new MappingDetail(detail.getClasses(), fields.values(), detail.getMethods(), params.values());
+            return new MappingDetail(detail.getClasses(), fieldNodes.values(), methodNodes.values(), paramNodes.values());
         });
+    }
+
+    private static void apply(String data, Map<String, IMappingDetail.IDocumentedNode> nodes) throws IOException {
+        try (NamedCsvReader csv = NamedCsvReader.builder().build(data)) {
+            for (NamedCsvRow row : csv) {
+                nodes.compute(row.getField("searge"), (k, old) -> (old != null ? old : new Node(k)).withMapping(row.getField("name")).withJavadoc(row.getField("desc")));
+            }
+        }
+    }
+
+    private static void applyParams(String data, Map<String, IMappingDetail.INode> nodes) throws IOException {
+        try (NamedCsvReader csv = NamedCsvReader.builder().build(data)) {
+            for (NamedCsvRow row : csv) {
+                nodes.compute(row.getField("param"), (k, old) -> (old != null ? old : new Node(k)).withMapping(row.getField("name")));
+            }
+        }
     }
 
     @Override

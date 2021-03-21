@@ -1,28 +1,40 @@
 package net.minecraftforge.gradle.mcp.mapping;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.ServiceLoader;
+import java.util.Arrays;
+import java.util.Set;
 import javax.annotation.Nullable;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.gradle.api.Project;
+import net.minecraftforge.gradle.common.util.BaseRepo;
 import net.minecraftforge.gradle.mcp.mapping.provider.McpMappingProvider;
 import net.minecraftforge.gradle.mcp.mapping.provider.OfficialMappingProvider;
 import net.minecraftforge.gradle.mcp.mapping.provider.example.MappingFileProvider;
 import net.minecraftforge.gradle.mcp.mapping.provider.example.OverlaidProvider;
 
 public class MappingProviders {
-    //TODO: Migrate from SPI
-    // https://discuss.gradle.org/t/loading-serviceloader-providers-in-plugin-project-apply-project/28121
-    private static final ServiceLoader<IMappingProvider> LOADER = ServiceLoader.load(IMappingProvider.class);
 
-    private static final List<IMappingProvider> PROVIDERS = Lists.newArrayList(
-        new McpMappingProvider(),
-        new OfficialMappingProvider(),
-        new MappingFileProvider(),
-        new OverlaidProvider()
-    );
+    /*
+     * Can't use SPI due to Gradle's ClassLoading https://discuss.gradle.org/t/loading-serviceloader-providers-in-plugin-project-apply-project/28121
+     */
+    private static final Set<IMappingProvider> PROVIDERS = Sets.newHashSet();
+
+    static {
+        /* The default ForgeGradle IMappingProviders */
+        MappingProviders.register(new McpMappingProvider(), new OfficialMappingProvider());
+
+        /* Example IMappingProviders - TODO: Move to Separate Plugin */
+        MappingProviders.register(new MappingFileProvider(), new OverlaidProvider());
+    }
+
+    public static void register(IMappingProvider... providers) {
+        PROVIDERS.addAll(Arrays.asList(providers));
+    }
+
+    public static boolean unregister(IMappingProvider provider) {
+        return PROVIDERS.remove(provider);
+    }
 
     public static IMappingInfo getInfo(Project project, String mapping) throws IOException {
         int idx = mapping.lastIndexOf('_');
@@ -53,22 +65,15 @@ public class MappingProviders {
         return info;
     }
 
+    private static void debug(Project project, String message) {
+        if (BaseRepo.DEBUG) project.getLogger().lifecycle(message);
+    }
+
     @Nullable
     public static IMappingProvider getProvider(Project project, String channel) {
-        //TODO: Change Logging Level
-
-        project.getLogger().lifecycle("Looking for: " + channel + " via SPI");
-        for (IMappingProvider provider : LOADER) {
-            project.getLogger().lifecycle("Considering: " + provider + " provider");
-
-            if (provider.getMappingChannels().contains(channel)) {
-                return provider;
-            }
-        }
-
-        project.getLogger().lifecycle("Looking for: " + channel);
+        debug(project, "Looking for: " + channel);
         for (IMappingProvider provider : PROVIDERS) {
-            project.getLogger().lifecycle("Considering: " + provider + " provider");
+            debug(project, "Considering: " + provider + " provider");
 
             if (provider.getMappingChannels().contains(channel)) {
                 return provider;
