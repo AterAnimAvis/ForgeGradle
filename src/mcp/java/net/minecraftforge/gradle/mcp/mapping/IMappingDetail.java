@@ -1,7 +1,6 @@
 package net.minecraftforge.gradle.mcp.mapping;
 
 import java.util.Map;
-import javax.annotation.Nullable;
 
 public interface IMappingDetail {
 
@@ -18,13 +17,7 @@ public interface IMappingDetail {
 
         String getMapped();
 
-        @Nullable
-        String getMeta(String name);
-
-        default String getSide() {
-            String side = getMeta("side");
-            return side != null ? side : Sides.BOTH;
-        }
+        String getSide();
 
         INode withMapping(String mapped);
 

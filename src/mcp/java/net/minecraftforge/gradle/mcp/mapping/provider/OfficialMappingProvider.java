@@ -21,13 +21,8 @@ public class OfficialMappingProvider extends CachingProvider {
 
     @Override
     public IMappingInfo getMappingInfo(Project project, String channel, String version) throws IOException {
-        String mcVersion = version;
-        int idx = mcVersion.lastIndexOf('-');
-        if (idx != -1 && mcVersion.substring(idx + 1).matches("\\d{8}\\.\\d{6}")) {
-            // The regex matches a timestamp attached to the version, like 1.16.5-20210101.010101
-            // This removes the timestamp part, so mcVersion only contains the minecraft version (for getting the mappings)
-            mcVersion = mcVersion.substring(0, idx);
-        }
+        String mcVersion = getMCVersion(version);
+
         File clientPG = MavenArtifactDownloader.generate(project, "net.minecraft:client:" + mcVersion + ":mappings@txt", true);
         File serverPG = MavenArtifactDownloader.generate(project, "net.minecraft:server:" + mcVersion + ":mappings@txt", true);
         if (clientPG == null || serverPG == null)
@@ -67,6 +62,17 @@ public class OfficialMappingProvider extends CachingProvider {
 
             return MappingDetail.fromSrg(client, server);
         });
+    }
+
+    protected String getMCVersion(String version) {
+        int idx = version.lastIndexOf('-');
+
+        if (idx != -1 && version.substring(idx + 1).matches("\\d{8}\\.\\d{6}")) {
+            // The regex matches a timestamp attached to the version, like 1.16.5-20210101.010101
+            // This removes the timestamp part, so mcVersion only contains the minecraft version (for getting the mappings)
+            return version.substring(0, idx);
+        }
+        return version;
     }
 
     @Override

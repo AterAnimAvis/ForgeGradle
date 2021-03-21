@@ -42,6 +42,10 @@ public class OverlaidProvider extends CachingProvider {
             "searge,name,side,desc\n" +
             "func_71410_x,getHighlander,0,\"There can be only one\"\n";
 
+        String classes = "" +
+            "searge,name,side,desc\n" +
+            "net/minecraft/client/Minecraft,net/minecraft/client/Minecraft,0,\"Who's Craft?\"\n";
+
         String params = "" +
             "param,name,side\n" +
             "p_i45547_1_,configurationIn,0\n";
@@ -50,6 +54,7 @@ public class OverlaidProvider extends CachingProvider {
         HashStore cache = commonHash(project)
             .load(cacheMappings(project, channel, version, "zip.input"))
             .add("official", official.get())
+            .add("classes", classes)
             .add("fields", fields)
             .add("methods", methods)
             .add("params", params)
@@ -58,22 +63,24 @@ public class OverlaidProvider extends CachingProvider {
         return fromCachable(channel, version, cache, mappings, () -> {
             IMappingDetail detail = official.getDetails();
 
+            Map<String, IMappingDetail.IDocumentedNode> classNodes = new HashMap<>(detail.getClasses());
             Map<String, IMappingDetail.IDocumentedNode> fieldNodes = new HashMap<>(detail.getFields());
             Map<String, IMappingDetail.IDocumentedNode> methodNodes = new HashMap<>(detail.getMethods());
             Map<String, IMappingDetail.INode> paramNodes = new HashMap<>(detail.getParameters());
 
+            apply(classes, classNodes);
             apply(fields, fieldNodes);
             apply(methods, methodNodes);
             applyParams(params, paramNodes);
 
-            return new MappingDetail(detail.getClasses(), fieldNodes, methodNodes, paramNodes);
+            return new MappingDetail(classNodes, fieldNodes, methodNodes, paramNodes);
         });
     }
 
     private static void apply(String data, Map<String, IMappingDetail.IDocumentedNode> nodes) throws IOException {
         try (NamedCsvReader csv = NamedCsvReader.builder().build(data)) {
             for (NamedCsvRow row : csv) {
-                nodes.compute(row.getField("searge"), (k, old) -> (old != null ? old : new Node(k)).withMapping(row.getField("name")).withJavadoc(row.getField("desc")));
+                nodes.compute(row.getField("searge"), (k, old) -> Node.orDocumented(k, old).withMapping(row.getField("name")).withJavadoc(row.getField("desc")));
             }
         }
     }
@@ -81,7 +88,7 @@ public class OverlaidProvider extends CachingProvider {
     private static void applyParams(String data, Map<String, IMappingDetail.INode> nodes) throws IOException {
         try (NamedCsvReader csv = NamedCsvReader.builder().build(data)) {
             for (NamedCsvRow row : csv) {
-                nodes.compute(row.getField("param"), (k, old) -> (old != null ? old : new Node(k)).withMapping(row.getField("name")));
+                nodes.compute(row.getField("param"), (k, old) -> Node.or(k, old).withMapping(row.getField("name")));
             }
         }
     }

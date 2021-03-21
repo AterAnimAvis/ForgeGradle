@@ -3,6 +3,7 @@ package net.minecraftforge.gradle.mcp.mapping.detail;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -54,10 +55,10 @@ public class MappingDetail implements IMappingDetail {
     }
 
     public static IMappingDetail fromSrg(IMappingFile client, IMappingFile server) {
-        Map<String, IDocumentedNode> classes = new TreeMap<>();
-        Map<String, IDocumentedNode> fields = new TreeMap<>();
-        Map<String, IDocumentedNode> methods = new TreeMap<>();
-        Map<String, INode> params = new TreeMap<>();
+        Map<String, IDocumentedNode> classes = new HashMap<>();
+        Map<String, IDocumentedNode> fields = new HashMap<>();
+        Map<String, IDocumentedNode> methods = new HashMap<>();
+        Map<String, INode> params = new HashMap<>();
 
         forEach(client, server, MappingDetail::forEachClass, classes::put);
         forEach(client, server, MappingDetail::forEachFields, fields::put);
@@ -68,10 +69,9 @@ public class MappingDetail implements IMappingDetail {
     }
 
     private static void forEach(IMappingFile client, IMappingFile server, BiConsumer<IMappingFile, BiConsumer<String, Node>> iterator, BiConsumer<String, Node> consumer) {
-        Map<String, Node> clientNodes = new TreeMap<>();
-        Map<String, Node> serverNodes = new TreeMap<>();
+        Map<String, Node> clientNodes = new HashMap<>();
+        Map<String, Node> serverNodes = new HashMap<>();
 
-        // TODO: merge metadata
         iterator.accept(client, clientNodes::put);
         iterator.accept(server, serverNodes::put);
 
@@ -95,12 +95,11 @@ public class MappingDetail implements IMappingDetail {
     }
 
     public static IMappingDetail fromSrg(IMappingFile input) {
-        Map<String, IDocumentedNode> classes = new TreeMap<>();
-        Map<String, IDocumentedNode> fields = new TreeMap<>();
-        Map<String, IDocumentedNode> methods = new TreeMap<>();
-        Map<String, INode> params = new TreeMap<>();
+        Map<String, IDocumentedNode> classes = new HashMap<>();
+        Map<String, IDocumentedNode> fields = new HashMap<>();
+        Map<String, IDocumentedNode> methods = new HashMap<>();
+        Map<String, INode> params = new HashMap<>();
 
-        // TODO: merge metadata
         forEachClass(input, classes::put);
         forEachFields(input, fields::put);
         forEachMethod(input, methods::put);
@@ -126,10 +125,10 @@ public class MappingDetail implements IMappingDetail {
     }
 
     public static IMappingDetail fromZip(File input) throws IOException {
-        Map<String, IDocumentedNode> classes = new TreeMap<>();
-        Map<String, IDocumentedNode> fields = new TreeMap<>();
-        Map<String, IDocumentedNode> methods = new TreeMap<>();
-        Map<String, INode> params = new TreeMap<>();
+        Map<String, IDocumentedNode> classes = new HashMap<>();
+        Map<String, IDocumentedNode> fields = new HashMap<>();
+        Map<String, IDocumentedNode> methods = new HashMap<>();
+        Map<String, INode> params = new HashMap<>();
 
         try (ZipFile zip = new ZipFile(input)) {
             readEntry(zip, "classes.csv", classes::put);
@@ -151,7 +150,7 @@ public class MappingDetail implements IMappingDetail {
             String obf = headers.contains("searge") ? "searge" : "param";
 
             reader.forEach(row -> {
-                String obfuscated = get(headers, row, obf, "");
+                String obfuscated = row.getField(obf);
                 String name = get(headers, row, "name", obfuscated);
                 String side = get(headers, row, "side", Sides.BOTH);
                 String javadoc = get(headers, row, "desc", "");

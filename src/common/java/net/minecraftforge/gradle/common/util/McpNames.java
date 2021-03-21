@@ -43,10 +43,9 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import de.siegmar.fastcsv.reader.NamedCsvReader;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import de.siegmar.fastcsv.reader.NamedCsvReader;
 
 public class McpNames {
     private static final String NEWLINE = System.getProperty("line.separator");
@@ -68,7 +67,7 @@ public class McpNames {
                     String obf = reader.getHeader().contains("searge") ? "searge" : "param";
                     boolean hasDesc = reader.getHeader().contains("desc");
                     reader.forEach(row -> {
-                        String searge = row.getField(obf);
+                        String searge = row.getField(obf).replace(".", "/");
                         names.put(searge, row.getField("name"));
                         if (hasDesc) {
                             String desc = row.getField("desc");
@@ -181,7 +180,7 @@ public class McpNames {
             //if the stack is not empty we are entering a new inner class
             String currentClass = (innerClasses.isEmpty() ? _package : innerClasses.peek().getLeft() + "$") + matcher.group("name");
             innerClasses.push(Pair.of(currentClass, matcher.group("indent").length()));
-            String javadoc = docs.get(currentClass);
+            String javadoc = docs.get(currentClass.replace(".", "/"));
             if (javadoc != null) {
                 insertAboveAnnotations(lines, JavadocAdder.buildJavadoc(matcher.group("indent"), javadoc, true));
             }
