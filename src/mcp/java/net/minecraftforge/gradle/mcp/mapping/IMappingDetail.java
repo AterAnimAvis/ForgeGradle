@@ -1,18 +1,17 @@
 package net.minecraftforge.gradle.mcp.mapping;
 
-import java.util.Collection;
+import java.util.Map;
 import javax.annotation.Nullable;
 
-//TODO: Consider moving these to Map<String, INode>
 public interface IMappingDetail {
 
-    Collection<IDocumentedNode> getClasses();
+    Map<String, IDocumentedNode> getClasses();
 
-    Collection<IDocumentedNode> getFields();
+    Map<String, IDocumentedNode> getFields();
 
-    Collection<IDocumentedNode> getMethods();
+    Map<String, IDocumentedNode> getMethods();
 
-    Collection<INode> getParameters();
+    Map<String, INode> getParameters();
 
     interface INode {
         String getOriginal();

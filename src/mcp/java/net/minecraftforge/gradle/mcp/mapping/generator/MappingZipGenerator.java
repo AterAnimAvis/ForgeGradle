@@ -41,16 +41,16 @@ public class MappingZipGenerator {
                 .build(new UnclosingWriter(writer));
 
             // Classes
-            writeCsvFile(csvWriterSupplier, zipOut, "classes.csv", mappings.getClasses());
+            writeCsvFile(csvWriterSupplier, zipOut, "classes.csv", mappings.getClasses().values());
 
             // Methods
-            writeCsvFile(csvWriterSupplier, zipOut, "methods.csv", mappings.getMethods());
+            writeCsvFile(csvWriterSupplier, zipOut, "methods.csv", mappings.getMethods().values());
 
             // Fields
-            writeCsvFile(csvWriterSupplier, zipOut, "fields.csv", mappings.getFields());
+            writeCsvFile(csvWriterSupplier, zipOut, "fields.csv", mappings.getFields().values());
 
             // Parameters
-            writeParamCsvFile(csvWriterSupplier, zipOut, mappings.getParameters());
+            writeParamCsvFile(csvWriterSupplier, zipOut, mappings.getParameters().values());
         }
     }
 

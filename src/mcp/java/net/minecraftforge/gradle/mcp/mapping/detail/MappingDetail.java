@@ -3,22 +3,16 @@ package net.minecraftforge.gradle.mcp.mapping.detail;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import com.google.common.collect.Lists;
 import de.siegmar.fastcsv.reader.NamedCsvReader;
 import de.siegmar.fastcsv.reader.NamedCsvRow;
 import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
@@ -27,12 +21,12 @@ import net.minecraftforge.gradle.mcp.mapping.util.MappingStreams;
 import net.minecraftforge.srgutils.IMappingFile;
 
 public class MappingDetail implements IMappingDetail {
-    protected final Collection<IDocumentedNode> classes;
-    protected final Collection<IDocumentedNode> fields;
-    protected final Collection<IDocumentedNode> methods;
-    protected final Collection<INode> params;
+    protected final Map<String, IDocumentedNode> classes;
+    protected final Map<String, IDocumentedNode> fields;
+    protected final Map<String, IDocumentedNode> methods;
+    protected final Map<String, INode> params;
 
-    public MappingDetail(Collection<IDocumentedNode> classes, Collection<IDocumentedNode> fields, Collection<IDocumentedNode> methods, Collection<INode> params) {
+    public MappingDetail(Map<String, IDocumentedNode> classes, Map<String, IDocumentedNode> fields, Map<String, IDocumentedNode> methods, Map<String, INode> params) {
         this.classes = classes;
         this.fields = fields;
         this.methods = methods;
@@ -40,46 +34,46 @@ public class MappingDetail implements IMappingDetail {
     }
 
     @Override
-    public Collection<IDocumentedNode> getClasses() {
+    public Map<String, IDocumentedNode> getClasses() {
         return classes;
     }
 
     @Override
-    public Collection<IDocumentedNode> getFields() {
+    public Map<String, IDocumentedNode> getFields() {
         return fields;
     }
 
     @Override
-    public Collection<IDocumentedNode> getMethods() {
+    public Map<String, IDocumentedNode> getMethods() {
         return methods;
     }
 
     @Override
-    public Collection<INode> getParameters() {
+    public Map<String, INode> getParameters() {
         return params;
     }
 
     public static IMappingDetail fromSrg(IMappingFile client, IMappingFile server) {
-        Collection<IDocumentedNode> classes = new TreeSet<>(Comparator.comparing(IMappingDetail.INode::getOriginal));
-        Collection<IDocumentedNode> fields = new TreeSet<>(Comparator.comparing(IMappingDetail.INode::getOriginal));
-        Collection<IDocumentedNode> methods = new TreeSet<>(Comparator.comparing(IMappingDetail.INode::getOriginal));
-        Collection<INode> params = new TreeSet<>(Comparator.comparing(IMappingDetail.INode::getOriginal));
+        Map<String, IDocumentedNode> classes = new TreeMap<>();
+        Map<String, IDocumentedNode> fields = new TreeMap<>();
+        Map<String, IDocumentedNode> methods = new TreeMap<>();
+        Map<String, INode> params = new TreeMap<>();
 
-        forEach(client, server, MappingDetail::forEachClass, classes::add);
-        forEach(client, server, MappingDetail::forEachFields, fields::add);
-        forEach(client, server, MappingDetail::forEachMethod, methods::add);
-        forEach(client, server, MappingDetail::forEachParam, params::add);
+        forEach(client, server, MappingDetail::forEachClass, classes::put);
+        forEach(client, server, MappingDetail::forEachFields, fields::put);
+        forEach(client, server, MappingDetail::forEachMethod, methods::put);
+        forEach(client, server, MappingDetail::forEachParam, params::put);
 
         return new MappingDetail(classes, fields, methods, params);
     }
 
-    private static void forEach(IMappingFile client, IMappingFile server, BiConsumer<IMappingFile, Consumer<Node>> iterator, Consumer<Node> consumer) {
+    private static void forEach(IMappingFile client, IMappingFile server, BiConsumer<IMappingFile, BiConsumer<String, Node>> iterator, BiConsumer<String, Node> consumer) {
         Map<String, Node> clientNodes = new TreeMap<>();
         Map<String, Node> serverNodes = new TreeMap<>();
 
         // TODO: merge metadata
-        iterator.accept(client, (node) -> clientNodes.put(node.getOriginal(), node));
-        iterator.accept(server, (node) -> serverNodes.put(node.getOriginal(), node));
+        iterator.accept(client, clientNodes::put);
+        iterator.accept(server, serverNodes::put);
 
         Set<String> clientKeys = clientNodes.keySet();
         Set<String> serverKeys = clientNodes.keySet();
@@ -95,61 +89,59 @@ public class MappingDetail implements IMappingDetail {
         serverKeys.removeAll(bothKeys);
 
         // Provide upwards
-        clientNodes.values().stream().map(it -> it.withSide(Sides.CLIENT)).forEach(consumer);
-        serverNodes.values().stream().map(it -> it.withSide(Sides.SERVER)).forEach(consumer);
-        bothNodes.values().stream().map(it -> it.withSide(Sides.BOTH)).forEach(consumer);
+        clientNodes.values().stream().map(it -> it.withSide(Sides.CLIENT)).forEach(node -> consumer.accept(node.getOriginal(), node));
+        serverNodes.values().stream().map(it -> it.withSide(Sides.SERVER)).forEach(node -> consumer.accept(node.getOriginal(), node));
+        bothNodes.values().stream().map(it -> it.withSide(Sides.BOTH)).forEach(node -> consumer.accept(node.getOriginal(), node));
     }
 
     public static IMappingDetail fromSrg(IMappingFile input) {
-        Collection<IDocumentedNode> classes = new TreeSet<>(Comparator.comparing(IMappingDetail.INode::getOriginal));
-        Collection<IDocumentedNode> fields = new TreeSet<>(Comparator.comparing(IMappingDetail.INode::getOriginal));
-        Collection<IDocumentedNode> methods = new TreeSet<>(Comparator.comparing(IMappingDetail.INode::getOriginal));
-        Collection<INode> params = new TreeSet<>(Comparator.comparing(IMappingDetail.INode::getOriginal));
-
-        // TODO: Note: We can have multiple nodes per original name the TreeSet solves this, however we also need to merge metadata
+        Map<String, IDocumentedNode> classes = new TreeMap<>();
+        Map<String, IDocumentedNode> fields = new TreeMap<>();
+        Map<String, IDocumentedNode> methods = new TreeMap<>();
+        Map<String, INode> params = new TreeMap<>();
 
         // TODO: merge metadata
-        forEachClass(input, classes::add);
-        forEachFields(input, fields::add);
-        forEachMethod(input, methods::add);
-        forEachParam(input, params::add);
+        forEachClass(input, classes::put);
+        forEachFields(input, fields::put);
+        forEachMethod(input, methods::put);
+        forEachParam(input, params::put);
 
         return new MappingDetail(classes, fields, methods, params);
     }
 
-    private static void forEachClass(IMappingFile input, Consumer<Node> consumer) {
-        MappingStreams.getClasses(input).map(Node::from).forEach(consumer);
+    private static void forEachClass(IMappingFile input, BiConsumer<String, Node> consumer) {
+        MappingStreams.getClasses(input).map(Node::from).forEach(node -> consumer.accept(node.getOriginal(), node));
     }
 
-    private static void forEachFields(IMappingFile input, Consumer<Node> consumer) {
-        MappingStreams.getFields(input).map(Node::from).forEach(consumer);
+    private static void forEachFields(IMappingFile input, BiConsumer<String, Node> consumer) {
+        MappingStreams.getFields(input).map(Node::from).forEach(node -> consumer.accept(node.getOriginal(), node));
     }
 
-    private static void forEachMethod(IMappingFile input, Consumer<Node> consumer) {
-        MappingStreams.getMethods(input).map(Node::from).forEach(consumer);
+    private static void forEachMethod(IMappingFile input, BiConsumer<String, Node> consumer) {
+        MappingStreams.getMethods(input).map(Node::from).forEach(node -> consumer.accept(node.getOriginal(), node));
     }
 
-    private static void forEachParam(IMappingFile input, Consumer<Node> consumer) {
-        MappingStreams.getParameters(input).map(Node::from).forEach(consumer);
+    private static void forEachParam(IMappingFile input, BiConsumer<String, Node> consumer) {
+        MappingStreams.getParameters(input).map(Node::from).forEach(node -> consumer.accept(node.getOriginal(), node));
     }
 
     public static IMappingDetail fromZip(File input) throws IOException {
-        List<IDocumentedNode> classes = Lists.newArrayList();
-        List<IDocumentedNode> fields = Lists.newArrayList();
-        List<IDocumentedNode> methods = Lists.newArrayList();
-        List<INode> params = Lists.newArrayList();
+        Map<String, IDocumentedNode> classes = new TreeMap<>();
+        Map<String, IDocumentedNode> fields = new TreeMap<>();
+        Map<String, IDocumentedNode> methods = new TreeMap<>();
+        Map<String, INode> params = new TreeMap<>();
 
         try (ZipFile zip = new ZipFile(input)) {
-            readEntry(zip, "classes.csv", classes::add);
-            readEntry(zip, "fields.csv", fields::add);
-            readEntry(zip, "methods.csv", methods::add);
-            readEntry(zip, "params.csv", params::add);
+            readEntry(zip, "classes.csv", classes::put);
+            readEntry(zip, "fields.csv", fields::put);
+            readEntry(zip, "methods.csv", methods::put);
+            readEntry(zip, "params.csv", params::put);
         }
 
         return new MappingDetail(classes, fields, methods, params);
     }
 
-    private static void readEntry(ZipFile zip, String entryName, Consumer<Node> consumer) throws IOException {
+    private static void readEntry(ZipFile zip, String entryName, BiConsumer<String, Node> consumer) throws IOException {
         Optional<? extends ZipEntry> entry = zip.stream().filter(e -> Objects.equals(entryName, e.getName())).findFirst();
 
         if (!entry.isPresent()) return;
@@ -164,7 +156,7 @@ public class MappingDetail implements IMappingDetail {
                 String side = get(headers, row, "side", Sides.BOTH);
                 String javadoc = get(headers, row, "desc", "");
 
-                consumer.accept(new Node(obfuscated, name, side, javadoc));
+                consumer.accept(obfuscated, new Node(obfuscated, name, side, javadoc));
             });
         }
     }

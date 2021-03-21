@@ -58,19 +58,15 @@ public class OverlaidProvider extends CachingProvider {
         return fromCachable(channel, version, cache, mappings, () -> {
             IMappingDetail detail = official.getDetails();
 
-            Map<String, IMappingDetail.IDocumentedNode> fieldNodes = new HashMap<>();
-            Map<String, IMappingDetail.IDocumentedNode> methodNodes = new HashMap<>();
-            Map<String, IMappingDetail.INode> paramNodes = new HashMap<>();
-
-            detail.getFields().forEach(node -> fieldNodes.put(node.getOriginal(), node));
-            detail.getMethods().forEach(node -> methodNodes.put(node.getOriginal(), node));
-            detail.getParameters().forEach(node -> paramNodes.put(node.getOriginal(), node));
+            Map<String, IMappingDetail.IDocumentedNode> fieldNodes = new HashMap<>(detail.getFields());
+            Map<String, IMappingDetail.IDocumentedNode> methodNodes = new HashMap<>(detail.getMethods());
+            Map<String, IMappingDetail.INode> paramNodes = new HashMap<>(detail.getParameters());
 
             apply(fields, fieldNodes);
             apply(methods, methodNodes);
             applyParams(params, paramNodes);
 
-            return new MappingDetail(detail.getClasses(), fieldNodes.values(), methodNodes.values(), paramNodes.values());
+            return new MappingDetail(detail.getClasses(), fieldNodes, methodNodes, paramNodes);
         });
     }
 
