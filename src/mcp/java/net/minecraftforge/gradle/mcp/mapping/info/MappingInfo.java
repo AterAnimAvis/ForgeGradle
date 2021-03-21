@@ -36,12 +36,7 @@ public class MappingInfo implements IMappingInfo {
     }
 
     @Override
-    public File get() throws IOException {
-        return destination;
-    }
-
-    @Override
-    public File getDestination() {
+    public File get() {
         return destination;
     }
 

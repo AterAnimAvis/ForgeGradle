@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -34,38 +36,38 @@ public class MappingZipGenerator {
              BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(zipOut))) {
             Supplier<CsvWriter> csvWriterSupplier
                 = () -> CsvWriter.builder()
-                .quoteStrategy(QuoteStrategy.ALWAYS)
+                .quoteStrategy(QuoteStrategy.REQUIRED)
                 .lineDelimiter(LineDelimiter.LF)
                 .build(new UnclosingWriter(writer));
 
             // Classes
-            writeCsvFile(csvWriterSupplier, zipOut, "classes.csv", mappings.getClasses().iterator());
+            writeCsvFile(csvWriterSupplier, zipOut, "classes.csv", mappings.getClasses());
 
             // Methods
-            writeCsvFile(csvWriterSupplier, zipOut, "methods.csv", mappings.getMethods().iterator());
+            writeCsvFile(csvWriterSupplier, zipOut, "methods.csv", mappings.getMethods());
 
             // Fields
-            writeCsvFile(csvWriterSupplier, zipOut, "fields.csv", mappings.getFields().iterator());
+            writeCsvFile(csvWriterSupplier, zipOut, "fields.csv", mappings.getFields());
 
             // Parameters
-            writeParamCsvFile(csvWriterSupplier, zipOut, mappings.getParameters().iterator());
+            writeParamCsvFile(csvWriterSupplier, zipOut, mappings.getParameters());
         }
     }
 
-    private static void writeCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, String fileName, Iterator<IMappingDetail.IDocumentedNode> nodes) throws IOException {
+    private static void writeCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, String fileName, Collection<IMappingDetail.IDocumentedNode> nodes) throws IOException {
         Consumer<CsvWriter> header = (csv) -> csv.writeRow("searge", "name", "side", "desc");
         BiConsumer<CsvWriter, IMappingDetail.IDocumentedNode> row = (csv, node) ->
             csv.writeRow(node.getOriginal(), node.getMapped(), node.getSide(), node.getJavadoc());
 
-        writeCsvFile(writer, zipOut, fileName, nodes, header, row);
+        writeCsvFile(writer, zipOut, fileName, nodes.stream().sorted(Comparator.comparing(IMappingDetail.INode::getOriginal)).iterator(), header, row);
     }
 
-    private static void writeParamCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, Iterator<IMappingDetail.INode> nodes) throws IOException {
+    private static void writeParamCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, Collection<IMappingDetail.INode> nodes) throws IOException {
         Consumer<CsvWriter> header = (csv) -> csv.writeRow("param", "name", "side");
         BiConsumer<CsvWriter, IMappingDetail.INode> row = (csv, node) ->
             csv.writeRow(node.getOriginal(), node.getMapped(), node.getSide());
 
-        writeCsvFile(writer, zipOut, "params.csv", nodes, header, row);
+        writeCsvFile(writer, zipOut, "params.csv", nodes.stream().sorted(Comparator.comparing(IMappingDetail.INode::getOriginal)).iterator(), header, row);
     }
 
     private static <T extends IMappingDetail.INode> void writeCsvFile(Supplier<CsvWriter> csvWriter, ZipOutputStream zipOut, String fileName, Iterator<T> nodes, Consumer<CsvWriter> header, BiConsumer<CsvWriter, T> callback) throws IOException {

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -165,7 +164,7 @@ public class MappingDetail implements IMappingDetail {
                 String side = get(headers, row, "side", Sides.BOTH);
                 String javadoc = get(headers, row, "desc", "");
 
-                consumer.accept(new Node(obfuscated, name, Collections.singletonMap("side", side), javadoc));
+                consumer.accept(new Node(obfuscated, name, side, javadoc));
             });
         }
     }

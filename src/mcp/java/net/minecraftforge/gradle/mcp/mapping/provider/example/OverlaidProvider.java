@@ -2,10 +2,10 @@ package net.minecraftforge.gradle.mcp.mapping.provider.example;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.gradle.api.Project;
 import net.minecraftforge.gradle.common.util.HashStore;
@@ -13,7 +13,6 @@ import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
 import net.minecraftforge.gradle.mcp.mapping.IMappingInfo;
 import net.minecraftforge.gradle.mcp.mapping.IMappingProvider;
 import net.minecraftforge.gradle.mcp.mapping.MappingProviders;
-import net.minecraftforge.gradle.mcp.mapping.Sides;
 import net.minecraftforge.gradle.mcp.mapping.detail.MappingDetail;
 import net.minecraftforge.gradle.mcp.mapping.detail.Node;
 import net.minecraftforge.gradle.mcp.mapping.provider.CachingProvider;
@@ -46,21 +45,16 @@ public class OverlaidProvider extends CachingProvider {
         return fromCachable(channel, version, cache, mappings, () -> {
             IMappingDetail detail = official.getDetails();
 
-            Collection<IMappingDetail.IDocumentedNode> fields = new ArrayList<>(detail.getFields());
-            Collection<IMappingDetail.INode> params = new ArrayList<>(detail.getParameters());
+            Map<String, IMappingDetail.IDocumentedNode> fields = new HashMap<>();
+            Map<String, IMappingDetail.INode> params = new HashMap<>();
 
-            //TODO: Cleanup into an actual Overlay System
-            Optional<IMappingDetail.IDocumentedNode> field = fields.stream().filter(node -> node.getOriginal().equals("field_71432_P")).findFirst();
-            field.ifPresent(params::remove);
-            IMappingDetail.IDocumentedNode f = field.orElse(null);
-            fields.add(new Node("field_71432_P", "theTrueMinecraft", Collections.singletonMap("side", f != null ? f.getSide() : Sides.BOTH), "Example JavaDoc"));
+            detail.getFields().forEach(node -> fields.put(node.getOriginal(), node));
+            detail.getParameters().forEach(node -> params.put(node.getOriginal(), node));
 
-            Optional<IMappingDetail.INode> param = params.stream().filter(node -> node.getOriginal().equals("p_i45547_1_")).findFirst();
-            param.ifPresent(params::remove);
-            IMappingDetail.INode p = param.orElse(null);
-            params.add(new Node("p_i45547_1_", "configurationIn", Collections.singletonMap("side", p != null ? p.getSide() : Sides.BOTH), ""));
+            fields.compute("field_71432_P", (k, old) -> (old != null ? old : new Node(k)).withMapping("theTrueMinecraft").withJavadoc("Example JavaDoc"));
+            params.compute("p_i45547_1_", (k, old) -> (old != null ? old : new Node(k)).withMapping("configurationIn"));
 
-            return new MappingDetail(detail.getClasses(), fields, detail.getMethods(), params);
+            return new MappingDetail(detail.getClasses(), fields.values(), detail.getMethods(), params.values());
         });
     }
 

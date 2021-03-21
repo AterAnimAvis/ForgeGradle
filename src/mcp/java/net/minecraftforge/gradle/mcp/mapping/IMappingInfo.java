@@ -8,9 +8,7 @@ public interface IMappingInfo {
 
     String getVersion();
 
-    File get() throws IOException;
-
-    File getDestination();
+    File get();
 
     IMappingDetail getDetails() throws IOException;
 }
