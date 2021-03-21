@@ -20,9 +20,6 @@
 
 package net.minecraftforge.gradle.common.util;
 
-import org.apache.commons.io.FileUtils;
-import org.gradle.api.Project;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,6 +27,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
+
+import org.apache.commons.io.FileUtils;
+import org.gradle.api.Project;
 
 public class HashStore {
     private final boolean INVALIDATE_CACHE = System.getProperty("FG_INVALIDATE_CACHE", "false").equals("true");
@@ -43,23 +43,25 @@ public class HashStore {
     public HashStore() {
         this.root = "";
     }
+
     public HashStore(Project project) {
         this.root = project.getRootDir().getAbsolutePath();
     }
+
     public HashStore(File root) {
         this.root = root.getAbsolutePath();
     }
 
     public boolean areSame(File... files) {
-        for(File file : files) {
-            if(!isSame(file)) return false;
+        for (File file : files) {
+            if (!isSame(file)) return false;
         }
         return true;
     }
 
     public boolean areSame(Iterable<File> files) {
-        for(File file : files) {
-            if(!isSame(file)) return false;
+        for (File file : files) {
+            if (!isSame(file)) return false;
         }
         return true;
     }
@@ -86,7 +88,7 @@ public class HashStore {
     public HashStore load(File file) throws IOException {
         this.target = file;
         oldHashes.clear();
-        if(!file.exists()) return this;
+        if (!file.exists()) return this;
         for (String line : FileUtils.readLines(file, StandardCharsets.UTF_8)) {
             String[] split = line.split("=");
             oldHashes.put(split[0], split[1]);
@@ -101,6 +103,10 @@ public class HashStore {
     public HashStore bust(int version) {
         newHashes.put("CACHE_BUSTER", Integer.toString(version));
         return this;
+    }
+
+    public HashStore add(String key, int data) {
+        return add(key, Integer.toString(data));
     }
 
     public HashStore add(String key, String data) {
@@ -128,12 +134,14 @@ public class HashStore {
         }
         return this;
     }
+
     public HashStore add(Iterable<File> files) {
         for (File file : files) {
             add(null, file);
         }
         return this;
     }
+
     public HashStore add(File file) {
         add(null, file);
         return this;
@@ -151,6 +159,7 @@ public class HashStore {
         }
         save(target);
     }
+
     public void save(File file) throws IOException {
         FileUtils.writeByteArrayToFile(file, newHashes.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining("\n")).getBytes());
     }
@@ -163,5 +172,4 @@ public class HashStore {
             return path.replace('\\', '/');
         }
     }
-
 }

@@ -4,9 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,7 +20,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import com.google.common.collect.Lists;
-import org.apache.groovy.util.Maps;
 import de.siegmar.fastcsv.reader.NamedCsvReader;
 import de.siegmar.fastcsv.reader.NamedCsvRow;
 import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
@@ -42,23 +41,23 @@ public class MappingDetail implements IMappingDetail {
     }
 
     @Override
-    public Iterator<IDocumentedNode> getClasses() {
-        return classes.iterator();
+    public Collection<IDocumentedNode> getClasses() {
+        return classes;
     }
 
     @Override
-    public Iterator<IDocumentedNode> getFields() {
-        return fields.iterator();
+    public Collection<IDocumentedNode> getFields() {
+        return fields;
     }
 
     @Override
-    public Iterator<IDocumentedNode> getMethods() {
-        return methods.iterator();
+    public Collection<IDocumentedNode> getMethods() {
+        return methods;
     }
 
     @Override
-    public Iterator<INode> getParameters() {
-        return params.iterator();
+    public Collection<INode> getParameters() {
+        return params;
     }
 
     public static IMappingDetail fromSrg(IMappingFile client, IMappingFile server) {
@@ -166,7 +165,7 @@ public class MappingDetail implements IMappingDetail {
                 String side = get(headers, row, "side", Sides.BOTH);
                 String javadoc = get(headers, row, "desc", "");
 
-                consumer.accept(new Node(obfuscated, name, Maps.of("side", side), javadoc));
+                consumer.accept(new Node(obfuscated, name, Collections.singletonMap("side", side), javadoc));
             });
         }
     }

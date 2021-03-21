@@ -39,16 +39,16 @@ public class MappingZipGenerator {
                 .build(new UnclosingWriter(writer));
 
             // Classes
-            writeCsvFile(csvWriterSupplier, zipOut, "classes.csv", mappings.getClasses());
+            writeCsvFile(csvWriterSupplier, zipOut, "classes.csv", mappings.getClasses().iterator());
 
             // Methods
-            writeCsvFile(csvWriterSupplier, zipOut, "methods.csv", mappings.getMethods());
+            writeCsvFile(csvWriterSupplier, zipOut, "methods.csv", mappings.getMethods().iterator());
 
             // Fields
-            writeCsvFile(csvWriterSupplier, zipOut, "fields.csv", mappings.getFields());
+            writeCsvFile(csvWriterSupplier, zipOut, "fields.csv", mappings.getFields().iterator());
 
             // Parameters
-            writeParamCsvFile(csvWriterSupplier, zipOut, mappings.getParameters());
+            writeParamCsvFile(csvWriterSupplier, zipOut, mappings.getParameters().iterator());
         }
     }
 
@@ -69,7 +69,7 @@ public class MappingZipGenerator {
     }
 
     private static <T extends IMappingDetail.INode> void writeCsvFile(Supplier<CsvWriter> csvWriter, ZipOutputStream zipOut, String fileName, Iterator<T> nodes, Consumer<CsvWriter> header, BiConsumer<CsvWriter, T> callback) throws IOException {
-        if (!nodes.hasNext()) {
+        if (nodes.hasNext()) {
             zipOut.putNextEntry(Utils.getStableEntry(fileName));
 
             try (CsvWriter csv = csvWriter.get()) {

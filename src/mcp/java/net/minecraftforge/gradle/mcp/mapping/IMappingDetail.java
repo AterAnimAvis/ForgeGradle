@@ -1,17 +1,17 @@
 package net.minecraftforge.gradle.mcp.mapping;
 
-import java.util.Iterator;
+import java.util.Collection;
 import javax.annotation.Nullable;
 
 public interface IMappingDetail {
 
-    Iterator<IDocumentedNode> getClasses();
+    Collection<IDocumentedNode> getClasses();
 
-    Iterator<IDocumentedNode> getFields();
+    Collection<IDocumentedNode> getFields();
 
-    Iterator<IDocumentedNode> getMethods();
+    Collection<IDocumentedNode> getMethods();
 
-    Iterator<INode> getParameters();
+    Collection<INode> getParameters();
 
     interface INode {
         String getOriginal();
