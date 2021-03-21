@@ -22,12 +22,12 @@ import net.minecraftforge.gradle.mcp.mapping.util.MappingStreams;
 import net.minecraftforge.srgutils.IMappingFile;
 
 public class MappingDetail implements IMappingDetail {
-    protected final Map<String, IDocumentedNode> classes;
-    protected final Map<String, IDocumentedNode> fields;
-    protected final Map<String, IDocumentedNode> methods;
+    protected final Map<String, INode> classes;
+    protected final Map<String, INode> fields;
+    protected final Map<String, INode> methods;
     protected final Map<String, INode> params;
 
-    public MappingDetail(Map<String, IDocumentedNode> classes, Map<String, IDocumentedNode> fields, Map<String, IDocumentedNode> methods, Map<String, INode> params) {
+    public MappingDetail(Map<String, INode> classes, Map<String, INode> fields, Map<String, INode> methods, Map<String, INode> params) {
         this.classes = classes;
         this.fields = fields;
         this.methods = methods;
@@ -35,17 +35,17 @@ public class MappingDetail implements IMappingDetail {
     }
 
     @Override
-    public Map<String, IDocumentedNode> getClasses() {
+    public Map<String, INode> getClasses() {
         return classes;
     }
 
     @Override
-    public Map<String, IDocumentedNode> getFields() {
+    public Map<String, INode> getFields() {
         return fields;
     }
 
     @Override
-    public Map<String, IDocumentedNode> getMethods() {
+    public Map<String, INode> getMethods() {
         return methods;
     }
 
@@ -55,9 +55,9 @@ public class MappingDetail implements IMappingDetail {
     }
 
     public static IMappingDetail fromSrg(IMappingFile client, IMappingFile server) {
-        Map<String, IDocumentedNode> classes = new HashMap<>();
-        Map<String, IDocumentedNode> fields = new HashMap<>();
-        Map<String, IDocumentedNode> methods = new HashMap<>();
+        Map<String, INode> classes = new HashMap<>();
+        Map<String, INode> fields = new HashMap<>();
+        Map<String, INode> methods = new HashMap<>();
         Map<String, INode> params = new HashMap<>();
 
         forEach(client, server, MappingDetail::forEachClass, classes::put);
@@ -95,9 +95,9 @@ public class MappingDetail implements IMappingDetail {
     }
 
     public static IMappingDetail fromSrg(IMappingFile input) {
-        Map<String, IDocumentedNode> classes = new HashMap<>();
-        Map<String, IDocumentedNode> fields = new HashMap<>();
-        Map<String, IDocumentedNode> methods = new HashMap<>();
+        Map<String, INode> classes = new HashMap<>();
+        Map<String, INode> fields = new HashMap<>();
+        Map<String, INode> methods = new HashMap<>();
         Map<String, INode> params = new HashMap<>();
 
         forEachClass(input, classes::put);
@@ -125,9 +125,9 @@ public class MappingDetail implements IMappingDetail {
     }
 
     public static IMappingDetail fromZip(File input) throws IOException {
-        Map<String, IDocumentedNode> classes = new HashMap<>();
-        Map<String, IDocumentedNode> fields = new HashMap<>();
-        Map<String, IDocumentedNode> methods = new HashMap<>();
+        Map<String, INode> classes = new HashMap<>();
+        Map<String, INode> fields = new HashMap<>();
+        Map<String, INode> methods = new HashMap<>();
         Map<String, INode> params = new HashMap<>();
 
         try (ZipFile zip = new ZipFile(input)) {

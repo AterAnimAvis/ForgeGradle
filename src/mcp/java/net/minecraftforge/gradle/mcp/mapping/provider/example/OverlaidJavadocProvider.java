@@ -23,45 +23,50 @@ import net.minecraftforge.gradle.mcp.mapping.provider.OfficialMappingProvider;
 /**
  * An example {@link IMappingProvider} that produces mappings based on {@link OfficialMappingProvider} with overlaid information.
  */
-public class OverlaidProvider extends CachingProvider {
+public class OverlaidJavadocProvider extends CachingProvider {
 
     @Override
     public Collection<String> getMappingChannels() {
-        return Collections.singleton("example_overlay");
+        return Collections.singleton("example_overlay_javadoc");
     }
 
     @Override
-    public IMappingInfo getMappingInfo(Project project, String channel, String version) throws IOException {
-        IMappingInfo official = MappingProviders.getInfo(project, "official", version);
+    public IMappingInfo getMappingInfo(Project project, String channel, String sourceMapping) throws IOException {
+        //TODO: this needs another version split in for the actual javadoc version
+
+        String sourceChannel = getChannel(sourceMapping);
+        String sourceVersion = getVersion(sourceMapping);
+
+        IMappingInfo source = MappingProviders.getInfo(project, sourceChannel, sourceVersion);
 
         String classes = "" +
-            "searge,name,side,desc\n" +
-            "net/minecraft/client/Minecraft,net/minecraft/client/Minecraft,0,\"Who's Craft?\"\n";
+            "searge,desc\n" +
+            "net/minecraft/client/Minecraft,\"Who's Craft?\"\n";
 
         String fields = "" +
-            "searge,name,side,desc\n" +
-            "field_71432_P,theAbyss,0,\"If you stare into the abyss, the abyss stares back\"\n";
+            "searge,desc\n" +
+            "field_71432_P,\"If you stare into the abyss, the abyss stares back\"\n";
 
         String methods = "" +
-            "searge,name,side,desc\n" +
-            "func_71410_x,getHighlander,0,\"There can be only one\"\n";
+            "searge,desc\n" +
+            "func_71410_x,\"There can be only one\"\n";
 
         String params = "" +
-            "param,name,side\n" +
-            "p_i45547_1_,configurationIn,0\n";
+            "searge,desc\n" +
+            "p_i45547_1_,\n";
 
-        File mappings = cacheMappings(project, channel, version, "zip");
+        File mappings = cacheMappings(project, channel, sourceMapping, "zip");
         HashStore cache = commonHash(project)
-            .load(cacheMappings(project, channel, version, "zip.input"))
-            .add("official", official.get())
+            .load(cacheMappings(project, channel, sourceMapping, "zip.input"))
+            .add("source", source.get())
             .add("classes", classes)
             .add("fields", fields)
             .add("methods", methods)
             .add("params", params)
-            .add("codever", "2");
+            .add("codever", "1");
 
-        return fromCachable(channel, version, cache, mappings, () -> {
-            IMappingDetail detail = official.getDetails();
+        return fromCachable(channel, sourceMapping, cache, mappings, () -> {
+            IMappingDetail detail = source.getDetails();
 
             Map<String, IMappingDetail.INode> classNodes = new HashMap<>(detail.getClasses());
             Map<String, IMappingDetail.INode> fieldNodes = new HashMap<>(detail.getFields());
@@ -77,21 +82,31 @@ public class OverlaidProvider extends CachingProvider {
         });
     }
 
+    protected String getChannel(String mapping) {
+        int idx = mapping.indexOf('-');
+
+        if (idx == -1 || idx == mapping.length()) {
+            throw new IllegalArgumentException("Invalid source mapping channel: " + mapping);
+        }
+
+        return mapping.substring(0, idx);
+    }
+
+    protected String getVersion(String mapping) {
+        int idx = mapping.indexOf('-');
+
+        if (idx == -1 || idx == mapping.length()) {
+            throw new IllegalArgumentException("Invalid source mapping channel: " + mapping);
+        }
+
+        return mapping.substring(idx + 1);
+    }
+
     private static void apply(String data, Map<String, IMappingDetail.INode> nodes) throws IOException {
         try (NamedCsvReader csv = NamedCsvReader.builder().build(data)) {
-            boolean hasDesc = csv.getHeader().contains("desc");
-
             for (NamedCsvRow row : csv) {
-                String mapped = row.getField("name");
-                String desc   = hasDesc ? row.getField("desc") : "";
-
                 nodes.compute(row.getField("searge"), (k, old) ->
-                    mapped.isEmpty()
-                        ? Node.or(k, old)
-                            .withJavadoc(desc)
-                        : Node.or(k, old)
-                            .withMapping(mapped)
-                            .withJavadoc(desc)
+                        Node.or(k, old).withJavadoc(row.getField("desc"))
                 );
             }
         }

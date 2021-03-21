@@ -8,7 +8,7 @@ import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
 import net.minecraftforge.gradle.mcp.mapping.Sides;
 import net.minecraftforge.srgutils.IMappingFile;
 
-public class Node implements IMappingDetail.IDocumentedNode {
+public class Node implements IMappingDetail.INode {
     private final String original;
     private final String mapped;
     private final String side;
@@ -68,10 +68,6 @@ public class Node implements IMappingDetail.IDocumentedNode {
     }
 
     public static IMappingDetail.INode or(String key, @Nullable IMappingDetail.INode node) {
-        return node != null ? node : new Node(key, key, Sides.BOTH, "");
-    }
-
-    public static IMappingDetail.IDocumentedNode orDocumented(String key, @Nullable IMappingDetail.IDocumentedNode node) {
         return node != null ? node : new Node(key, key, Sides.BOTH, "");
     }
 

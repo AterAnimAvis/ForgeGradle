@@ -4,11 +4,11 @@ import java.util.Map;
 
 public interface IMappingDetail {
 
-    Map<String, IDocumentedNode> getClasses();
+    Map<String, INode> getClasses();
 
-    Map<String, IDocumentedNode> getFields();
+    Map<String, INode> getFields();
 
-    Map<String, IDocumentedNode> getMethods();
+    Map<String, INode> getMethods();
 
     Map<String, INode> getParameters();
 
@@ -19,20 +19,12 @@ public interface IMappingDetail {
 
         String getSide();
 
+        String getJavadoc();
+
         INode withMapping(String mapped);
 
         INode withSide(String side);
-    }
 
-    interface IDocumentedNode extends INode {
-        String getJavadoc();
-
-        @Override
-        IDocumentedNode withMapping(String mapped);
-
-        @Override
-        IDocumentedNode withSide(String side);
-
-        IDocumentedNode withJavadoc(String javadoc);
+        INode withJavadoc(String javadoc);
     }
 }
