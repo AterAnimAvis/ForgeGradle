@@ -67,7 +67,7 @@ public class McpNames {
                     String obf = reader.getHeader().contains("searge") ? "searge" : "param";
                     boolean hasDesc = reader.getHeader().contains("desc");
                     reader.forEach(row -> {
-                        String searge = row.getField(obf).replace(".", "/");
+                        String searge = row.getField(obf);
                         names.put(searge, row.getField("name"));
                         if (hasDesc) {
                             String desc = row.getField("desc");
@@ -180,7 +180,7 @@ public class McpNames {
             //if the stack is not empty we are entering a new inner class
             String currentClass = (innerClasses.isEmpty() ? _package : innerClasses.peek().getLeft() + "$") + matcher.group("name");
             innerClasses.push(Pair.of(currentClass, matcher.group("indent").length()));
-            String javadoc = docs.get(currentClass.replace(".", "/"));
+            String javadoc = docs.get(currentClass);
             if (javadoc != null) {
                 insertAboveAnnotations(lines, JavadocAdder.buildJavadoc(matcher.group("indent"), javadoc, true));
             }

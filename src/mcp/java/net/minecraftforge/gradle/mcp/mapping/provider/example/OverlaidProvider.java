@@ -58,7 +58,7 @@ public class OverlaidProvider extends CachingProvider {
             .add("fields", fields)
             .add("methods", methods)
             .add("params", params)
-            .add("codever", "1");
+            .add("codever", "2");
 
         return fromCachable(channel, version, cache, mappings, () -> {
             IMappingDetail detail = official.getDetails();

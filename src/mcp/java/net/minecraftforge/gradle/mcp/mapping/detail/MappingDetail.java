@@ -155,7 +155,7 @@ public class MappingDetail implements IMappingDetail {
                 String side = get(headers, row, "side", Sides.BOTH);
                 String javadoc = get(headers, row, "desc", "");
 
-                consumer.accept(obfuscated, new Node(obfuscated, name, side, javadoc));
+                consumer.accept(obfuscated.replace(".", "/"), new Node(obfuscated.replace(".", "/"), name.replace(".", "/"), side, javadoc));
             });
         }
     }

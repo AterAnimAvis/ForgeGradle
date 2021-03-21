@@ -57,7 +57,7 @@ public class MappingZipGenerator {
     private static void writeCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, String fileName, Collection<IMappingDetail.IDocumentedNode> nodes) throws IOException {
         Consumer<CsvWriter> header = (csv) -> csv.writeRow("searge", "name", "side", "desc");
         BiConsumer<CsvWriter, IMappingDetail.IDocumentedNode> row = (csv, node) ->
-            csv.writeRow(node.getOriginal(), node.getMapped(), node.getSide(), node.getJavadoc());
+            csv.writeRow(node.getOriginal().replace("/", "."), node.getMapped().replace("/", "."), node.getSide(), node.getJavadoc());
 
         writeCsvFile(writer, zipOut, fileName, nodes.stream().sorted(Comparator.comparing(IMappingDetail.INode::getOriginal)).iterator(), header, row);
     }
