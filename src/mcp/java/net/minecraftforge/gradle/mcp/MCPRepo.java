@@ -20,27 +20,20 @@
 
 package net.minecraftforge.gradle.mcp;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Map;
-
-import com.google.common.collect.Maps;
-import org.apache.commons.io.FileUtils;
-import org.gradle.api.Project;
-import org.gradle.api.logging.Logger;
 import net.minecraftforge.artifactural.api.artifact.ArtifactIdentifier;
 import net.minecraftforge.artifactural.api.repository.ArtifactProvider;
 import net.minecraftforge.artifactural.api.repository.Repository;
 import net.minecraftforge.artifactural.base.repository.ArtifactProviderBuilder;
 import net.minecraftforge.artifactural.base.repository.SimpleRepository;
 import net.minecraftforge.artifactural.gradle.GradleRepositoryAdapter;
+import com.google.common.collect.Maps;
+
 import net.minecraftforge.gradle.common.util.BaseRepo;
 import net.minecraftforge.gradle.common.util.HashFunction;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.ManifestJson;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
+import net.minecraftforge.gradle.common.util.McpNames;
 import net.minecraftforge.gradle.common.util.MinecraftRepo;
 import net.minecraftforge.gradle.common.util.POMBuilder;
 import net.minecraftforge.gradle.common.util.Utils;
@@ -48,14 +41,48 @@ import net.minecraftforge.gradle.common.util.VersionJson;
 import net.minecraftforge.gradle.mcp.mapping.MappingProviders;
 import net.minecraftforge.gradle.mcp.util.MCPRuntime;
 import net.minecraftforge.gradle.mcp.util.MCPWrapper;
+import net.minecraftforge.srgutils.IMappingFile;
+import net.minecraftforge.srgutils.IRenamer;
+import net.minecraftforge.srgutils.IMappingFile.IField;
+import net.minecraftforge.srgutils.IMappingFile.IMethod;
+
+import org.apache.commons.io.FileUtils;
+import org.gradle.api.Project;
+import org.gradle.api.logging.Logger;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Provides the following artifacts:
- * <p>
- * net.minecraft: client: MCPVersion: srg - Srg named SLIM jar file. srg-sources - Srg named decompiled/patched code. server: MCPVersion: srg - Srg named SLIM jar file. srg-sources - Srg named decompiled/patched code. joined: MCPVersion: .pom - Pom meta linking against net.minecraft:client:extra and net.minecraft:client:data '' - Notch named merged jar file srg - Srg named jar file. srg-sources -
- * Srg named decompiled/patched code. mappings_{channel}: MCPVersion|MCVersion: .zip - A zip file containing SRG -> Human readable field and method mappings. Current supported channels: 'stable', 'snapshot': MCP's crowdsourced mappings. 'official': Official mappings released by Mojang.
- * <p>
- * Note: It does NOT provide the Obfed named jars for server and client, as that is provided by MinecraftRepo.
+ *
+ * net.minecraft:
+ *   client:
+ *     MCPVersion:
+ *       srg - Srg named SLIM jar file.
+ *       srg-sources - Srg named decompiled/patched code.
+ *   server:
+ *     MCPVersion:
+ *       srg - Srg named SLIM jar file.
+ *       srg-sources - Srg named decompiled/patched code.
+ *   joined:
+ *     MCPVersion:
+ *       .pom - Pom meta linking against net.minecraft:client:extra and net.minecraft:client:data
+ *       '' - Notch named merged jar file
+ *       srg - Srg named jar file.
+ *       srg-sources - Srg named decompiled/patched code.
+ *   mappings_{channel}:
+ *     MCPVersion|MCVersion:
+ *       .zip - A zip file containing SRG -> Human readable field and method mappings.
+ *         Current supported channels:
+ *         'stable', 'snapshot': MCP's crowdsourced mappings.
+ *         'official': Official mappings released by Mojang.
+ *
+ *   Note: It does NOT provide the Obfed named jars for server and client, as that is provided by MinecraftRepo.
  */
 public class MCPRepo extends BaseRepo {
     private static MCPRepo INSTANCE = null;
@@ -68,7 +95,6 @@ public class MCPRepo extends BaseRepo {
 
     //This is the artifact we expose that is a zip containing SRG->Official fields and methods.
     public static final String MAPPING_DEP = "net.minecraft:mappings_{CHANNEL}:{VERSION}@zip";
-
     public static String getMappingDep(String channel, String version) {
         return MAPPING_DEP.replace("{CHANNEL}", channel).replace("{VERSION}", version);
     }
@@ -106,6 +132,12 @@ public class MCPRepo extends BaseRepo {
         return cache("net", "minecraft", side, version, side + '-' + version + '.' + ext);
     }
 
+    private File cacheMCP(String version, String classifier, String ext) {
+        if (classifier != null)
+            return cache("de", "oceanlabs", "mcp", "mcp_config", version, "mcp_config-" + version + '-' + classifier + '.' + ext);
+        return cache("de", "oceanlabs", "mcp", "mcp_config", version, "mcp_config-" + version + '.' + ext);
+    }
+
     private File cacheMCP(String version) {
         return cache("de", "oceanlabs", "mcp", "mcp_config", version);
     }
@@ -141,12 +173,9 @@ public class MCPRepo extends BaseRepo {
                 return findPom(name, version);
             } else {
                 switch (classifier) {
-                    case "":
-                        return findRaw(name, version);
-                    case "srg":
-                        return findSrg(name, version);
-                    case "extra":
-                        return findExtra(name, version);
+                    case "":              return findRaw(name, version);
+                    case "srg":           return findSrg(name, version);
+                    case "extra":         return findExtra(name, version);
                 }
             }
         } else if (group.equals(GROUP_MCP)) {
@@ -184,7 +213,7 @@ public class MCPRepo extends BaseRepo {
         Utils.updateHash(manifest);
         File json = cache("versions", version, "version.json");
 
-        URL url = Utils.loadJson(manifest, ManifestJson.class).getUrl(version);
+        URL url =  Utils.loadJson(manifest, ManifestJson.class).getUrl(version);
         if (url == null)
             throw new RuntimeException("Missing version from manifest: " + version);
 
@@ -282,7 +311,7 @@ public class MCPRepo extends BaseRepo {
             } catch (Exception e) {
                 e.printStackTrace();
                 log.lifecycle(e.getMessage());
-                if (e instanceof RuntimeException) throw (RuntimeException) e;
+                if (e instanceof RuntimeException) throw (RuntimeException)e;
                 throw new RuntimeException(e);
             }
         }
@@ -292,7 +321,7 @@ public class MCPRepo extends BaseRepo {
     private synchronized MCPWrapper getWrapper(String version, File data) throws IOException {
         String hash = HashFunction.SHA1.hash(data);
         MCPWrapper ret = wrappers.get(version);
-        if (ret == null || !hash.equals(ret.getHash())) {
+        if (ret == null  || !hash.equals(ret.getHash())) {
             ret = new MCPWrapper(hash, data, cacheMCP(version));
             wrappers.put(version, ret);
         }

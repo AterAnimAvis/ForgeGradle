@@ -35,6 +35,6 @@ public class McpMappingProvider implements IMappingProvider {
 
     @Override
     public String toString() {
-        return "MCP Community Mappings";
+        return "MCP CrowdSourced Mappings";
     }
 }

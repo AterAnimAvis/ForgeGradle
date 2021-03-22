@@ -43,9 +43,10 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import de.siegmar.fastcsv.reader.NamedCsvReader;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import de.siegmar.fastcsv.reader.NamedCsvReader;
 
 public class McpNames {
     private static final String NEWLINE = System.getProperty("line.separator");
