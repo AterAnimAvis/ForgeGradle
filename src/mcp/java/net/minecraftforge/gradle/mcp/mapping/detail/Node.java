@@ -14,12 +14,7 @@ public class Node implements IMappingDetail.INode {
     private final String side;
     private final String javadoc;
 
-    public Node(String original, String mapped, Map<String, String> meta) {
-        //TODO: Check that `comment` is the right key
-        this(original, mapped, meta.getOrDefault("side", Sides.BOTH), meta.getOrDefault("comment", ""));
-    }
-
-    public Node(String original, String mapped, String side, String javadoc) {
+    protected Node(String original, String mapped, String side, String javadoc) {
         this.original = original;
         this.mapped = mapped;
         this.javadoc = javadoc;
@@ -68,10 +63,19 @@ public class Node implements IMappingDetail.INode {
     }
 
     public static IMappingDetail.INode or(String key, @Nullable IMappingDetail.INode node) {
-        return node != null ? node : new Node(key, key, Sides.BOTH, "");
+        return node != null ? node : of(key, key, Sides.BOTH, "");
     }
 
-    public static Node from(IMappingFile.INode node) {
-        return new Node(node.getOriginal(), node.getMapped(), node.getMetadata());
+    public static Node of(IMappingFile.INode node) {
+        Map<String, String> meta = node.getMetadata();
+        String side = meta.getOrDefault("side", Sides.BOTH);
+        //TODO: Check that `comment` is the right key
+        String javadoc = meta.getOrDefault("comment", "");
+
+        return of(node.getOriginal(), node.getMapped(), side, javadoc);
+    }
+
+    public static Node of(String original, String mapped, String side, String javadoc) {
+        return new Node(original, mapped, side, javadoc);
     }
 }

@@ -1,7 +1,6 @@
 package net.minecraftforge.gradle.mcp.mapping.provider;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 
 import com.google.common.collect.Lists;
@@ -24,14 +23,14 @@ public class McpMappingProvider implements IMappingProvider {
     }
 
     @Override
-    public IMappingInfo getMappingInfo(Project project, String channel, String version) throws IOException {
+    public IMappingInfo getMappingInfo(Project project, String channel, String version) {
         String desc = "de.oceanlabs.mcp:mcp_" + channel + ":" + version + "@zip";
 
         debug(project, "    Mapping: " + desc);
 
         File destination = MavenArtifactDownloader.manual(project, desc, false);
 
-        return new MappingInfo(channel, version, destination);
+        return MappingInfo.of(channel, version, destination);
     }
 
     @Override

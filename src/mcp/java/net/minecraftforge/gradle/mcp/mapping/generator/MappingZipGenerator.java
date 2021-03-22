@@ -20,6 +20,9 @@ import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
 
 public class MappingZipGenerator {
 
+    /**
+     * Generates a ForgeGradle compatible `mappings.zip` from an {@link IMappingDetail}
+     */
     public static void generate(File outputZip, IMappingDetail mappings) throws IOException {
         Preconditions.checkArgument(!outputZip.exists() || outputZip.isFile(), "Output zip must be a file");
         if (outputZip.exists() && !outputZip.delete()) {

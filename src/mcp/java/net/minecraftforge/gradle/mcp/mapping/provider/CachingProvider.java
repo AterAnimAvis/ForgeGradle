@@ -20,19 +20,22 @@ import net.minecraftforge.srgutils.IMappingFile;
 
 public abstract class CachingProvider implements IMappingProvider {
 
-    protected MappingInfo fromCachable(String channel, String version, HashStore cache, File destination, IOSupplier<IMappingDetail> detailSupplier) throws IOException {
+    /**
+     * TODO: DOCS
+     */
+    protected MappingInfo fromCachable(String channel, String version, HashStore cache, File destination, IOSupplier<IMappingDetail> supplier) throws IOException {
         if (!cache.isSame() || !destination.exists()) {
-            IMappingDetail detail = detailSupplier.get();
+            IMappingDetail detail = supplier.get();
 
             MappingZipGenerator.generate(destination, detail);
 
             cache.save();
             Utils.updateHash(destination, HashFunction.SHA1);
 
-            return new MappingInfo(channel, version, destination, detail);
+            return MappingInfo.of(channel, version, destination, detail);
         }
 
-        return new MappingInfo(channel, version, destination);
+        return MappingInfo.of(channel, version, destination);
     }
 
     protected File findRenames(Project project, String classifier, IMappingFile.Format format, String version, boolean toObf) throws IOException {

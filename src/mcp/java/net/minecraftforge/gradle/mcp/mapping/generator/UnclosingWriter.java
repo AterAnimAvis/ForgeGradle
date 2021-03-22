@@ -4,9 +4,9 @@ import java.io.BufferedWriter;
 import java.io.FilterWriter;
 import java.io.IOException;
 
-public class UnclosingWriter extends FilterWriter {
+class UnclosingWriter extends FilterWriter {
 
-    public UnclosingWriter(BufferedWriter out) {
+    UnclosingWriter(BufferedWriter out) {
         super(out);
     }
 

@@ -23,20 +23,38 @@ import net.minecraftforge.gradle.mcp.mapping.provider.OfficialMappingProvider;
 /**
  * An example {@link IMappingProvider} that produces mappings based on {@link OfficialMappingProvider} with overlaid information.
  */
-public class OverlaidProvider extends CachingProvider {
+public class OverlaidOfficialProvider extends CachingProvider {
 
     @Override
     public Collection<String> getMappingChannels() {
         return Collections.singleton("example_overlay");
     }
 
+    /**
+     * <p>
+     * Supports Versions in the following formats: <br>
+     * [VERSION]-[JAVADOC-VERSION] <br>
+     *   => Javadocs [JAVADOC-VERSION] applied to (official, [VERSION]) <br>
+     * </p>
+     * <p>
+     * Example: <br>
+     * 1.16.4-rev3 => Javadocs rev3 applied on-top of (official, 1.16.4) mappings<br>
+     * 1.16.4-20201209.230658-rev3 => Javadocs rev3 applied on-top of (official, 1.16.4-20201209.230658) mappings<br>
+     * </p>
+     */
     @Override
-    public IMappingInfo getMappingInfo(Project project, String channel, String version) throws IOException {
-        IMappingInfo official = MappingProviders.getInfo(project, "official", version);
+    public IMappingInfo getMappingInfo(Project project, String channel, String versionIn) throws IOException {
+        String[] parts = splitVersions(versionIn);
+
+        String channelVersion = parts[0];
+        String version = parts[1];
+
+        IMappingInfo official = MappingProviders.getInfo(project, "official", channelVersion);
 
         String classes = "" +
             "searge,name,side,desc\n" +
-            "net/minecraft/client/Minecraft,net/minecraft/client/Minecraft,0,\"Who's Craft?\"\n";
+            "net/minecraft/client/Minecraft,net/minecraft/client/Minecraft,0,\"Who's Craft? - Doc Version {VERSION}\"\n"
+                .replace("{VERSION}", version);
 
         String fields = "" +
             "searge,name,side,desc\n" +
@@ -50,34 +68,41 @@ public class OverlaidProvider extends CachingProvider {
             "param,name,side\n" +
             "p_i45547_1_,configurationIn,0\n";
 
-        File mappings = cacheMappings(project, channel, version, "zip");
+        File mappings = cacheMappings(project, channel, versionIn, "zip");
         HashStore cache = commonHash(project)
-            .load(cacheMappings(project, channel, version, "zip.input"))
+            .load(cacheMappings(project, channel, versionIn, "zip.input"))
             .add("official", official.get())
-            .add("classes", classes)
-            .add("fields", fields)
-            .add("methods", methods)
-            .add("params", params)
+            .add("version", version)
             .add("codever", "2");
 
-        return fromCachable(channel, version, cache, mappings, () -> {
+        return fromCachable(channel, versionIn, cache, mappings, () -> {
             IMappingDetail detail = official.getDetails();
 
-            Map<String, IMappingDetail.INode> classNodes = new HashMap<>(detail.getClasses());
-            Map<String, IMappingDetail.INode> fieldNodes = new HashMap<>(detail.getFields());
-            Map<String, IMappingDetail.INode> methodNodes = new HashMap<>(detail.getMethods());
-            Map<String, IMappingDetail.INode> paramNodes = new HashMap<>(detail.getParameters());
+            Map<String, IMappingDetail.INode> classNodes = apply(classes, detail.getClasses());
+            Map<String, IMappingDetail.INode> fieldNodes = apply(fields, detail.getFields());
+            Map<String, IMappingDetail.INode> methodNodes = apply(methods, detail.getMethods());
+            Map<String, IMappingDetail.INode> paramNodes = apply(params, detail.getParameters());
 
-            apply(classes, classNodes);
-            apply(fields, fieldNodes);
-            apply(methods, methodNodes);
-            apply(params, paramNodes);
-
-            return new MappingDetail(classNodes, fieldNodes, methodNodes, paramNodes);
+            return MappingDetail.of(classNodes, fieldNodes, methodNodes, paramNodes);
         });
     }
 
-    private static void apply(String data, Map<String, IMappingDetail.INode> nodes) throws IOException {
+    protected String[] splitVersions(String version) {
+        int idx = version.lastIndexOf('-');
+
+        if (idx == -1 || version.length() == idx) {
+            throw new IllegalArgumentException("Invalid mapping version: " + version);
+        }
+
+        return new String[] {
+            version.substring(0, idx),
+            version.substring(idx + 1)
+        };
+    }
+
+    private static Map<String, IMappingDetail.INode> apply(String data, Map<String, IMappingDetail.INode> input) throws IOException {
+        HashMap<String, IMappingDetail.INode> nodes = new HashMap<>(input);
+
         try (NamedCsvReader csv = NamedCsvReader.builder().build(data)) {
             boolean hasDesc = csv.getHeader().contains("desc");
 
@@ -85,16 +110,18 @@ public class OverlaidProvider extends CachingProvider {
                 String mapped = row.getField("name");
                 String desc   = hasDesc ? row.getField("desc") : "";
 
-                nodes.compute(row.getField("searge"), (k, old) ->
+                nodes.compute(row.getField("searge"), (srg, old) ->
                     mapped.isEmpty()
-                        ? Node.or(k, old)
+                        ? Node.or(srg, old)
                             .withJavadoc(desc)
-                        : Node.or(k, old)
+                        : Node.or(srg, old)
                             .withMapping(mapped)
                             .withJavadoc(desc)
                 );
             }
         }
+
+        return nodes;
     }
 
     @Override

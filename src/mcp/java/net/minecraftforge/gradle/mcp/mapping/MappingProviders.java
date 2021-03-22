@@ -2,41 +2,52 @@ package net.minecraftforge.gradle.mcp.mapping;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Set;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import javax.annotation.Nullable;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import org.gradle.api.Project;
 import net.minecraftforge.gradle.common.util.BaseRepo;
 import net.minecraftforge.gradle.mcp.mapping.provider.McpMappingProvider;
 import net.minecraftforge.gradle.mcp.mapping.provider.OfficialMappingProvider;
 import net.minecraftforge.gradle.mcp.mapping.provider.example.MappingFileProvider;
 import net.minecraftforge.gradle.mcp.mapping.provider.example.OverlaidJavadocProvider;
-import net.minecraftforge.gradle.mcp.mapping.provider.example.OverlaidProvider;
+import net.minecraftforge.gradle.mcp.mapping.provider.example.OverlaidOfficialProvider;
 
 public class MappingProviders {
 
     /*
      * Can't use SPI due to Gradle's ClassLoading https://discuss.gradle.org/t/loading-serviceloader-providers-in-plugin-project-apply-project/28121
      */
-    private static final Set<IMappingProvider> PROVIDERS = Sets.newHashSet();
+    private static final List<IMappingProvider> PROVIDERS = Lists.newArrayList();
 
     static {
         /* The default ForgeGradle IMappingProviders */
         MappingProviders.register(new McpMappingProvider(), new OfficialMappingProvider());
 
         /* Example IMappingProviders - TODO: Move to Separate Plugin */
-        MappingProviders.register(new MappingFileProvider(), new OverlaidProvider(), new OverlaidJavadocProvider());
+        MappingProviders.register(new MappingFileProvider(), new OverlaidOfficialProvider(), new OverlaidJavadocProvider());
     }
 
+    /**
+     * Registers {@link IMappingProvider}s which will then be considered for resolution of a `mappings.zip`.
+     */
     public static void register(IMappingProvider... providers) {
         PROVIDERS.addAll(Arrays.asList(providers));
     }
 
+    /**
+     * Unregisters an {@link IMappingProvider}
+     */
     public static boolean unregister(IMappingProvider provider) {
         return PROVIDERS.remove(provider);
     }
 
+    /**
+     * TODO: DOCS
+     */
     public static IMappingInfo getInfo(Project project, String mapping) throws IOException {
         int idx = mapping.lastIndexOf('_');
 
@@ -50,6 +61,9 @@ public class MappingProviders {
         return getInfo(project, channel, version);
     }
 
+    /**
+     * TODO: DOCS
+     */
     public static IMappingInfo getInfo(Project project, String channel, String version) throws IOException {
         String mapping = channel + "_" + version;
 
@@ -66,10 +80,9 @@ public class MappingProviders {
         return info;
     }
 
-    private static void debug(Project project, String message) {
-        if (BaseRepo.DEBUG) project.getLogger().lifecycle(message);
-    }
-
+    /**
+     * TODO: DOCS
+     */
     @Nullable
     public static IMappingProvider getProvider(Project project, String channel) {
         debug(project, "Looking for: " + channel);
@@ -82,5 +95,16 @@ public class MappingProviders {
         }
 
         return null;
+    }
+
+    /**
+     * @return an Unmodifiable view of the registered Providers
+     */
+    public static Collection<IMappingProvider> getProviders() {
+        return Collections.unmodifiableList(PROVIDERS);
+    }
+
+    private static void debug(Project project, String message) {
+        if (BaseRepo.DEBUG) project.getLogger().lifecycle(message);
     }
 }

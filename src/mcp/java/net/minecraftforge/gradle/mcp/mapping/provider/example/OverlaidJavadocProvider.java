@@ -30,86 +30,108 @@ public class OverlaidJavadocProvider extends CachingProvider {
         return Collections.singleton("example_overlay_javadoc");
     }
 
+    /**
+     * <p>
+     * Supports Versions in the following formats: <br>
+     * [CHANNEL]-[VERSION]-[JAVADOC_REVISION] <br>
+     *   => Javadocs [VERSION]-[JAVADOC_REVISION] applied to ([CHANNEL], [VERSION]) <br>
+     * [CHANNEL]-[VERSION]-[JAVADOC_REVISION]-[MAPPING-VERSION] <br>
+     *   => Javadocs [VERSION]-[JAVADOC_REVISION] applied to ([CHANNEL], [MAPPING-VERSION]) <br>
+     * </p>
+     * <p>
+     * Example: <br>
+     * official-1.16.4-1.0.0 => Javadocs 1.16.4-1.0.0 applied on-top of (official, 1.16.4) mappings<br>
+     * official-1.16.4-1.0.0-1.16.4-20201209.230658 => Javadocs 1.16.4-1.0.0 applied on-top of (official, 1.16.4-20201209.230658) mappings<br>
+     * </p>
+     */
     @Override
-    public IMappingInfo getMappingInfo(Project project, String channel, String sourceMapping) throws IOException {
-        //TODO: this needs another version split in for the actual javadoc version
+    public IMappingInfo getMappingInfo(Project project, String channel, String version) throws IOException {
+        String[] parts = getVersion(version);
 
-        String sourceChannel = getChannel(sourceMapping);
-        String sourceVersion = getVersion(sourceMapping);
+        String javadocVersion = parts[0];
+        String sourceChannel = parts[1];
+        String sourceVersion = parts[2];
 
         IMappingInfo source = MappingProviders.getInfo(project, sourceChannel, sourceVersion);
 
-        String classes = "" +
-            "searge,desc\n" +
-            "net/minecraft/client/Minecraft,\"Who's Craft?\"\n";
+        String classes = getClassesForVersion(javadocVersion);
+        String fields = getFieldsForVersion(javadocVersion);
+        String methods = getMethodsForVersion(javadocVersion);
+        String params = getParamsForVersion(javadocVersion);
 
-        String fields = "" +
-            "searge,desc\n" +
-            "field_71432_P,\"If you stare into the abyss, the abyss stares back\"\n";
-
-        String methods = "" +
-            "searge,desc\n" +
-            "func_71410_x,\"There can be only one\"\n";
-
-        String params = "" +
-            "searge,desc\n" +
-            "p_i45547_1_,\n";
-
-        File mappings = cacheMappings(project, channel, sourceMapping, "zip");
+        File mappings = cacheMappings(project, channel, version, "zip");
         HashStore cache = commonHash(project)
-            .load(cacheMappings(project, channel, sourceMapping, "zip.input"))
+            .load(cacheMappings(project, channel, version, "zip.input"))
+            .add("version", javadocVersion)
             .add("source", source.get())
-            .add("classes", classes)
-            .add("fields", fields)
-            .add("methods", methods)
-            .add("params", params)
             .add("codever", "1");
 
-        return fromCachable(channel, sourceMapping, cache, mappings, () -> {
+        return fromCachable(channel, version, cache, mappings, () -> {
             IMappingDetail detail = source.getDetails();
 
-            Map<String, IMappingDetail.INode> classNodes = new HashMap<>(detail.getClasses());
-            Map<String, IMappingDetail.INode> fieldNodes = new HashMap<>(detail.getFields());
-            Map<String, IMappingDetail.INode> methodNodes = new HashMap<>(detail.getMethods());
-            Map<String, IMappingDetail.INode> paramNodes = new HashMap<>(detail.getParameters());
+            Map<String, IMappingDetail.INode> classNodes = apply(classes, detail.getClasses());
+            Map<String, IMappingDetail.INode> fieldNodes = apply(fields, detail.getFields());
+            Map<String, IMappingDetail.INode> methodNodes = apply(methods, detail.getMethods());
+            Map<String, IMappingDetail.INode> paramNodes = apply(params, detail.getParameters());
 
-            apply(classes, classNodes);
-            apply(fields, fieldNodes);
-            apply(methods, methodNodes);
-            apply(params, paramNodes);
-
-            return new MappingDetail(classNodes, fieldNodes, methodNodes, paramNodes);
+            return MappingDetail.of(classNodes, fieldNodes, methodNodes, paramNodes);
         });
     }
 
-    protected String getChannel(String mapping) {
-        int idx = mapping.indexOf('-');
-
-        if (idx == -1 || idx == mapping.length()) {
-            throw new IllegalArgumentException("Invalid source mapping channel: " + mapping);
-        }
-
-        return mapping.substring(0, idx);
+    private String getClassesForVersion(String version) {
+        return "" +
+            "searge,desc\n" +
+            "net/minecraft/client/Minecraft,\"Who's Craft? - Doc Version {VERSION}\"\n".replace("{VERSION}", version);
     }
 
-    protected String getVersion(String mapping) {
-        int idx = mapping.indexOf('-');
-
-        if (idx == -1 || idx == mapping.length()) {
-            throw new IllegalArgumentException("Invalid source mapping channel: " + mapping);
-        }
-
-        return mapping.substring(idx + 1);
+    private String getFieldsForVersion(String version) {
+        return "" +
+            "searge,desc\n" +
+            "field_71432_P,\"If you stare into the abyss, the abyss stares back - Doc Version {VERSION}\"\n".replace("{VERSION}", version);
     }
 
-    private static void apply(String data, Map<String, IMappingDetail.INode> nodes) throws IOException {
+    private String getMethodsForVersion(String version) {
+        return "" +
+            "searge,desc\n" +
+            "func_71410_x,\"There can be only one - Doc Version {VERSION}\"\n".replace("{VERSION}", version);
+    }
+
+    private String getParamsForVersion(String version) {
+        return "" +
+            "searge,desc\n" +
+            "p_i45547_1_,\"The Input Configuration - Doc Version {VERSION}\"\n".replace("{VERSION}", version);
+    }
+
+    protected String[] getVersion(String mapping) {
+        String[] parts = mapping.split("-", 4);
+
+        if (parts.length < 3) {
+            throw new IllegalArgumentException("Invalid mapping version: " + mapping);
+        }
+
+        String source_channel = parts[0];
+        String javadoc_version = parts[1] + parts[2];
+        String source_version = parts.length == 4 ? parts[3] : parts[1];
+
+        return new String[] {
+            javadoc_version,
+            source_channel,
+            source_version
+        };
+    }
+
+    private static Map<String, IMappingDetail.INode> apply(String data, Map<String, IMappingDetail.INode> source) throws IOException {
+        Map<String, IMappingDetail.INode> nodes = new HashMap<>(source);
+
         try (NamedCsvReader csv = NamedCsvReader.builder().build(data)) {
             for (NamedCsvRow row : csv) {
-                nodes.compute(row.getField("searge"), (k, old) ->
-                        Node.or(k, old).withJavadoc(row.getField("desc"))
+                nodes.compute(row.getField("searge"), (srg, old) ->
+                    Node.or(srg, old).withJavadoc(row.getField("desc"))
                 );
             }
         }
+
+        return nodes;
     }
 
     @Override
