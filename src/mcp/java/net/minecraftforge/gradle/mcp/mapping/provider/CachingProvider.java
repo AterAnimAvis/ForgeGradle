@@ -5,13 +5,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
-import org.apache.commons.io.function.IOSupplier;
 import org.gradle.api.Project;
 import net.minecraftforge.gradle.common.config.MCPConfigV2;
 import net.minecraftforge.gradle.common.util.HashFunction;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
 import net.minecraftforge.gradle.common.util.Utils;
+import net.minecraftforge.gradle.common.util.func.IOSupplier;
 import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
 import net.minecraftforge.gradle.mcp.mapping.IMappingProvider;
 import net.minecraftforge.gradle.mcp.mapping.generator.MappingZipGenerator;

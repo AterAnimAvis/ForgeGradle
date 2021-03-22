@@ -12,9 +12,6 @@ import org.gradle.api.Project;
 import net.minecraftforge.gradle.common.util.BaseRepo;
 import net.minecraftforge.gradle.mcp.mapping.provider.McpMappingProvider;
 import net.minecraftforge.gradle.mcp.mapping.provider.OfficialMappingProvider;
-import net.minecraftforge.gradle.mcp.mapping.provider.example.MappingFileProvider;
-import net.minecraftforge.gradle.mcp.mapping.provider.example.OverlaidJavadocProvider;
-import net.minecraftforge.gradle.mcp.mapping.provider.example.OverlaidOfficialProvider;
 
 public class MappingProviders {
 
@@ -26,9 +23,6 @@ public class MappingProviders {
     static {
         /* The default ForgeGradle IMappingProviders */
         MappingProviders.register(new McpMappingProvider(), new OfficialMappingProvider());
-
-        /* Example IMappingProviders - TODO: Move to Separate Plugin */
-        MappingProviders.register(new MappingFileProvider(), new OverlaidOfficialProvider(), new OverlaidJavadocProvider());
     }
 
     /**
