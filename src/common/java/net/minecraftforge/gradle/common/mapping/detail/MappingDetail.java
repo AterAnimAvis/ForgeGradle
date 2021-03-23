@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping.detail;
+package net.minecraftforge.gradle.common.mapping.detail;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,9 +17,9 @@ import java.util.zip.ZipFile;
 
 import de.siegmar.fastcsv.reader.NamedCsvReader;
 import de.siegmar.fastcsv.reader.NamedCsvRow;
-import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
-import net.minecraftforge.gradle.mcp.mapping.Sides;
-import net.minecraftforge.gradle.mcp.mapping.util.MappingStreams;
+import net.minecraftforge.gradle.common.mapping.IMappingDetail;
+import net.minecraftforge.gradle.common.mapping.Sides;
+import net.minecraftforge.gradle.common.mapping.util.MappingStreams;
 import net.minecraftforge.srgutils.IMappingFile;
 
 public class MappingDetail implements IMappingDetail {

@@ -304,7 +304,6 @@ public class PatcherPlugin implements Plugin<Project> {
         if (doingUpdate) {
             String version = (String) project.property("UPDATE_MAPPINGS");
             String channel = project.hasProperty("UPDATE_MAPPINGS_CHANNEL") ? (String) project.property("UPDATE_MAPPINGS_CHANNEL") : "snapshot";
-            MojangLicenseHelper.displayWarning(project, channel);
 
             TaskProvider<DownloadMCPMappingsTask> dlMappingsNew = project.getTasks().register("downloadMappingsNew", DownloadMCPMappingsTask.class);
             dlMappingsNew.get().setMappings(channel + '_' + version);
@@ -370,7 +369,6 @@ public class PatcherPlugin implements Plugin<Project> {
                 PatcherPlugin patcher = extension.parent.getPlugins().findPlugin(PatcherPlugin.class);
 
                 if (mcp != null) {
-                    MojangLicenseHelper.displayWarning(p, extension.getMappingChannel());
                     SetupMCPTask setupMCP = (SetupMCPTask) tasks.getByName("setupMCP");
 
                     if (procConfig != null) {

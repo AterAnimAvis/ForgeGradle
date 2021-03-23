@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping;
+package net.minecraftforge.gradle.common.mapping;
 
 public interface Sides {
     String CLIENT = "0";

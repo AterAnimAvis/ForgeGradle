@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping;
+package net.minecraftforge.gradle.common.mapping;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -10,8 +10,8 @@ import javax.annotation.Nullable;
 import com.google.common.collect.Lists;
 import org.gradle.api.Project;
 import net.minecraftforge.gradle.common.util.BaseRepo;
-import net.minecraftforge.gradle.mcp.mapping.provider.McpMappingProvider;
-import net.minecraftforge.gradle.mcp.mapping.provider.OfficialMappingProvider;
+import net.minecraftforge.gradle.common.mapping.provider.McpMappingProvider;
+import net.minecraftforge.gradle.common.mapping.provider.OfficialMappingProvider;
 
 public class MappingProviders {
 
@@ -22,7 +22,7 @@ public class MappingProviders {
 
     static {
         /* The default ForgeGradle IMappingProviders */
-        MappingProviders.register(new McpMappingProvider(), new OfficialMappingProvider());
+        register(new McpMappingProvider(), new OfficialMappingProvider());
     }
 
     /**
@@ -74,6 +74,14 @@ public class MappingProviders {
         return info;
     }
 
+    public static String getMappingString(Project project, String channel, String version) {
+        final IMappingProvider provider = MappingProviders.getProvider(project, channel);
+
+        if (provider == null) return channel + "_" + version;
+
+        return provider.getMappingString(project, channel, version);
+    }
+
     /**
      * TODO: DOCS
      */
@@ -84,6 +92,7 @@ public class MappingProviders {
             debug(project, "Considering: " + provider + " provider");
 
             if (provider.getMappingChannels().contains(channel)) {
+                debug(project, "Selected: " + provider + " provider");
                 return provider;
             }
         }

@@ -1,11 +1,11 @@
-package net.minecraftforge.gradle.mcp.mapping.detail;
+package net.minecraftforge.gradle.common.mapping.detail;
 
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 
-import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
-import net.minecraftforge.gradle.mcp.mapping.Sides;
+import net.minecraftforge.gradle.common.mapping.IMappingDetail;
+import net.minecraftforge.gradle.common.mapping.Sides;
 import net.minecraftforge.srgutils.IMappingFile;
 
 public class Node implements IMappingDetail.INode {

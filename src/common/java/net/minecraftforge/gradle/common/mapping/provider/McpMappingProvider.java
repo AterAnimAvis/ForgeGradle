@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping.provider;
+package net.minecraftforge.gradle.common.mapping.provider;
 
 import java.io.File;
 import java.util.Collection;
@@ -7,9 +7,9 @@ import com.google.common.collect.Lists;
 import org.gradle.api.Project;
 import net.minecraftforge.gradle.common.util.BaseRepo;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
-import net.minecraftforge.gradle.mcp.mapping.IMappingInfo;
-import net.minecraftforge.gradle.mcp.mapping.IMappingProvider;
-import net.minecraftforge.gradle.mcp.mapping.info.MappingInfo;
+import net.minecraftforge.gradle.common.mapping.IMappingInfo;
+import net.minecraftforge.gradle.common.mapping.IMappingProvider;
+import net.minecraftforge.gradle.common.mapping.info.MappingInfo;
 
 public class McpMappingProvider implements IMappingProvider {
 

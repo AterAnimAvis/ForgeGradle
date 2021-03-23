@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping.provider;
+package net.minecraftforge.gradle.common.mapping.provider;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,8 +8,9 @@ import java.util.Collections;
 import org.gradle.api.Project;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
-import net.minecraftforge.gradle.mcp.mapping.IMappingInfo;
-import net.minecraftforge.gradle.mcp.mapping.detail.MappingDetail;
+import net.minecraftforge.gradle.common.util.MojangLicenseHelper;
+import net.minecraftforge.gradle.common.mapping.IMappingInfo;
+import net.minecraftforge.gradle.common.mapping.detail.MappingDetail;
 import net.minecraftforge.srgutils.IMappingFile;
 
 public class OfficialMappingProvider extends CachingProvider {
@@ -35,6 +36,8 @@ public class OfficialMappingProvider extends CachingProvider {
         File mcp = getMCPConfigZip(project, version);
         if (mcp == null)
             return null; // TODO: handle when MCPConfig zip could not be downloaded
+
+        MojangLicenseHelper.displayWarning(project, clientPG);
 
         File mappings = cacheMappings(project, channel, version, "zip");
         HashStore cache = commonHash(project, mcp)
@@ -64,7 +67,7 @@ public class OfficialMappingProvider extends CachingProvider {
         });
     }
 
-    protected String getMCVersion(String version) {
+    public static String getMCVersion(String version) {
         int idx = version.lastIndexOf('-');
 
         if (idx != -1 && version.substring(idx + 1).matches("\\d{8}\\.\\d{6}")) {

@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping;
+package net.minecraftforge.gradle.common.mapping;
 
 import java.io.File;
 import java.io.IOException;

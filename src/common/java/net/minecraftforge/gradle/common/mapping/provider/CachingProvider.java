@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping.provider;
+package net.minecraftforge.gradle.common.mapping.provider;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -12,10 +12,10 @@ import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
 import net.minecraftforge.gradle.common.util.Utils;
 import net.minecraftforge.gradle.common.util.func.IOSupplier;
-import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
-import net.minecraftforge.gradle.mcp.mapping.IMappingProvider;
-import net.minecraftforge.gradle.mcp.mapping.generator.MappingZipGenerator;
-import net.minecraftforge.gradle.mcp.mapping.info.MappingInfo;
+import net.minecraftforge.gradle.common.mapping.IMappingDetail;
+import net.minecraftforge.gradle.common.mapping.IMappingProvider;
+import net.minecraftforge.gradle.common.mapping.generator.MappingZipGenerator;
+import net.minecraftforge.gradle.common.mapping.info.MappingInfo;
 import net.minecraftforge.srgutils.IMappingFile;
 
 public abstract class CachingProvider implements IMappingProvider {

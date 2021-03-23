@@ -1,8 +1,8 @@
-package net.minecraftforge.gradle.mcp.mapping;
+package net.minecraftforge.gradle.common.mapping;
 
 import java.util.Map;
 
-import net.minecraftforge.gradle.mcp.mapping.generator.MappingZipGenerator;
+import net.minecraftforge.gradle.common.mapping.generator.MappingZipGenerator;
 
 /**
  * A Collection of maps of `SRG NAME` -> {@link INode} <br>

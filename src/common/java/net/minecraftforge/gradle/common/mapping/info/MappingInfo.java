@@ -1,12 +1,12 @@
-package net.minecraftforge.gradle.mcp.mapping.info;
+package net.minecraftforge.gradle.common.mapping.info;
 
 import java.io.File;
 import java.io.IOException;
 
 import net.minecraftforge.gradle.common.util.func.IOSupplier;
-import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
-import net.minecraftforge.gradle.mcp.mapping.IMappingInfo;
-import net.minecraftforge.gradle.mcp.mapping.detail.MappingDetail;
+import net.minecraftforge.gradle.common.mapping.IMappingDetail;
+import net.minecraftforge.gradle.common.mapping.IMappingInfo;
+import net.minecraftforge.gradle.common.mapping.detail.MappingDetail;
 
 public class MappingInfo implements IMappingInfo {
 

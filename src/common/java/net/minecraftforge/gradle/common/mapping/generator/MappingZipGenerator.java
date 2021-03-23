@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping.generator;
+package net.minecraftforge.gradle.common.mapping.generator;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,7 +16,7 @@ import de.siegmar.fastcsv.writer.CsvWriter;
 import de.siegmar.fastcsv.writer.LineDelimiter;
 import de.siegmar.fastcsv.writer.QuoteStrategy;
 import net.minecraftforge.gradle.common.util.Utils;
-import net.minecraftforge.gradle.mcp.mapping.IMappingDetail;
+import net.minecraftforge.gradle.common.mapping.IMappingDetail;
 
 public class MappingZipGenerator {
 

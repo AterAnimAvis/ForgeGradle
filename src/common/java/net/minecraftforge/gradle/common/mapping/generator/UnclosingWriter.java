@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping.generator;
+package net.minecraftforge.gradle.common.mapping.generator;
 
 import java.io.BufferedWriter;
 import java.io.FilterWriter;

@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.mcp.mapping.util;
+package net.minecraftforge.gradle.common.mapping.util;
 
 import java.util.stream.Stream;
 
