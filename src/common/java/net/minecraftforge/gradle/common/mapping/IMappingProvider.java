@@ -16,7 +16,7 @@ public interface IMappingProvider {
     /**
      * TODO: DOCS
      * Channels should match the regex of [a-z_]+
-     * Versions should match the regex of [0-9a-z-.]+ (not enforced but may cause problems)
+     * Versions should match the regex of [0-9a-z-.]+ (not enforced but may cause problems) //TODO: (Any Maven compatible version)
      * @param project The current gradle project
      * @param channel The requested channel
      * @param version The requested version
@@ -25,13 +25,4 @@ public interface IMappingProvider {
      */
     IMappingInfo getMappingInfo(Project project, String channel, String version) throws IOException;
 
-    /**
-     * TODO: DOCS MARK AS IMPORTANT FOR CACHING UPSTREAM
-     * @param channel
-     * @param version
-     * @return
-     */
-    default String getMappingString(Project project, String channel, String version) {
-        return channel + "_" + version;
-    }
 }

@@ -3,10 +3,10 @@ package net.minecraftforge.gradle.common.mapping.info;
 import java.io.File;
 import java.io.IOException;
 
+import net.minecraftforge.gradle.common.mapping.detail.MappingDetails;
 import net.minecraftforge.gradle.common.util.func.IOSupplier;
 import net.minecraftforge.gradle.common.mapping.IMappingDetail;
 import net.minecraftforge.gradle.common.mapping.IMappingInfo;
-import net.minecraftforge.gradle.common.mapping.detail.MappingDetail;
 
 public class MappingInfo implements IMappingInfo {
 
@@ -43,7 +43,7 @@ public class MappingInfo implements IMappingInfo {
     }
 
     public static MappingInfo of(String channel, String version, File destination) {
-        return of(channel, version, destination, () -> MappingDetail.fromZip(destination));
+        return of(channel, version, destination, () -> MappingDetails.fromZip(destination));
     }
 
     public static MappingInfo of(String channel, String version, File destination, IMappingDetail detail) {

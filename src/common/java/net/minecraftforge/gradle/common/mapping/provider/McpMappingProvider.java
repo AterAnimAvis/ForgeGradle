@@ -27,7 +27,6 @@ public class McpMappingProvider implements IMappingProvider {
         String desc = "de.oceanlabs.mcp:mcp_" + channel + ":" + version + "@zip";
 
         debug(project, "    Mapping: " + desc);
-
         File destination = MavenArtifactDownloader.manual(project, desc, false);
 
         return MappingInfo.of(channel, version, destination);

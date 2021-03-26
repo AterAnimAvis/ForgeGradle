@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
@@ -17,30 +21,34 @@ public class MappingProviders {
 
     /*
      * Can't use SPI due to Gradle's ClassLoading https://discuss.gradle.org/t/loading-serviceloader-providers-in-plugin-project-apply-project/28121
+     *
+     * Why a Map? Because Gradle Plugins can get applied multiple times causing multiple registration calls (If they register in apply).
+     * 500+ IMappingProviders from the original 9 over the course of 30 minutes, thanks.
      */
-    private static final List<IMappingProvider> PROVIDERS = Lists.newArrayList();
+    private static final Map<String, IMappingProvider> PROVIDERS = new HashMap<>();
 
     static {
         /* The default ForgeGradle IMappingProviders */
-        register(new McpMappingProvider(), new OfficialMappingProvider());
+        register("forge:mcp", new McpMappingProvider());
+        register("forge:official", new OfficialMappingProvider());
     }
 
     /**
-     * Registers {@link IMappingProvider}s which will then be considered for resolution of a `mappings.zip`.
+     * Registers an {@link IMappingProvider} which will then be considered for resolution of a `mappings.zip`.
      */
-    public static void register(IMappingProvider... providers) {
-        PROVIDERS.addAll(Arrays.asList(providers));
+    public static void register(String name, IMappingProvider provider) {
+        PROVIDERS.put(name, provider);
     }
 
     /**
-     * Unregisters an {@link IMappingProvider}
+     * Unregisters an {@link IMappingProvider} by identifier
      */
-    public static boolean unregister(IMappingProvider provider) {
-        return PROVIDERS.remove(provider);
+    public static void unregister(String name) {
+        PROVIDERS.remove(name);
     }
 
     /**
-     * TODO: DOCS
+     * @see MappingProviders#getInfo(Project, String, String)
      */
     public static IMappingInfo getInfo(Project project, String mapping) throws IOException {
         int idx = mapping.lastIndexOf('_');
@@ -56,7 +64,7 @@ public class MappingProviders {
     }
 
     /**
-     * TODO: DOCS
+     * @return an IMappingInfo representing a resolved `mappings.zip`
      */
     public static IMappingInfo getInfo(Project project, String channel, String version) throws IOException {
         String mapping = channel + "_" + version;
@@ -74,37 +82,25 @@ public class MappingProviders {
         return info;
     }
 
-    public static String getMappingString(Project project, String channel, String version) {
-        final IMappingProvider provider = MappingProviders.getProvider(project, channel);
-
-        if (provider == null) return channel + "_" + version;
-
-        return provider.getMappingString(project, channel, version);
-    }
-
     /**
-     * TODO: DOCS
+     * @return an IMappingProvider that can handle the requested channel
      */
     @Nullable
     public static IMappingProvider getProvider(Project project, String channel) {
+        project.getLogger().lifecycle("Current number of providers: " + PROVIDERS.size());
         debug(project, "Looking for: " + channel);
-        for (IMappingProvider provider : PROVIDERS) {
-            debug(project, "Considering: " + provider + " provider");
+        for (Map.Entry<String, IMappingProvider> entry : PROVIDERS.entrySet()) {
+            String key = entry.getKey();
+            IMappingProvider provider = entry.getValue();
 
-            if (provider.getMappingChannels().contains(channel)) {
-                debug(project, "Selected: " + provider + " provider");
-                return provider;
-            }
+            debug(project, "    Considering: " + key);
+            if (!provider.getMappingChannels().contains(channel)) continue;
+
+            debug(project, "    Selected: " + key);
+            return provider;
         }
 
         return null;
-    }
-
-    /**
-     * @return an Unmodifiable view of the registered Providers
-     */
-    public static Collection<IMappingProvider> getProviders() {
-        return Collections.unmodifiableList(PROVIDERS);
     }
 
     private static void debug(Project project, String message) {

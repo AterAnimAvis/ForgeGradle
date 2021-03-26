@@ -18,6 +18,9 @@ import net.minecraftforge.gradle.common.mapping.generator.MappingZipGenerator;
 import net.minecraftforge.gradle.common.mapping.info.MappingInfo;
 import net.minecraftforge.srgutils.IMappingFile;
 
+/**
+ * TODO: Move these to Helper Class?
+ */
 public abstract class CachingProvider implements IMappingProvider {
 
     /**

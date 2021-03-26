@@ -17,6 +17,7 @@ import de.siegmar.fastcsv.writer.LineDelimiter;
 import de.siegmar.fastcsv.writer.QuoteStrategy;
 import net.minecraftforge.gradle.common.util.Utils;
 import net.minecraftforge.gradle.common.mapping.IMappingDetail;
+import net.minecraftforge.srgutils.IMappingFile;
 
 public class MappingZipGenerator {
 
@@ -55,8 +56,10 @@ public class MappingZipGenerator {
         }
     }
 
+    private static final Comparator<IMappingDetail.INode> BY_ORIGINAL = Comparator.comparing(IMappingDetail.INode::getOriginal);
+
     private static void writeCsvFile(Supplier<CsvWriter> writer, ZipOutputStream zipOut, String fileName, Map<String, IMappingDetail.INode> input) throws IOException {
-        Iterator<IMappingDetail.INode> nodes = input.values().stream().sorted(Comparator.comparing(IMappingDetail.INode::getOriginal)).iterator();
+        Iterator<IMappingDetail.INode> nodes = input.values().stream().sorted(BY_ORIGINAL).filter(MappingZipGenerator::isSrgOrHasJavadoc).iterator();
 
         if (nodes.hasNext()) {
             zipOut.putNextEntry(Utils.getStableEntry(fileName));
@@ -64,10 +67,39 @@ public class MappingZipGenerator {
             try (CsvWriter csv = writer.get()) {
                 csv.writeRow(fileName.equals("params.csv") ? "param" : "searge", "name", "side", "desc");
 
-                nodes.forEachRemaining(node -> csv.writeRow(node.getOriginal().replace("/", "."), node.getMapped().replace("/", "."), node.getSide(), node.getJavadoc()));
+                nodes.forEachRemaining(node -> csv.writeRow(encodeClass(node.getOriginal()), encodeClass(node.getMapped()), node.getSide(), encodeJavadoc(node)));
             }
 
             zipOut.closeEntry();
         }
+    }
+
+    /**
+     * Classes are represented in `.` form in the `mappings.zip
+     */
+    private static String encodeClass(String name) {
+        return name.replace("/", ".");
+    }
+
+    /**
+     * Line breaks in Javadocs are represented as literal \n
+     */
+    private static String encodeJavadoc(IMappingDetail.INode node) {
+        return node.getJavadoc().replaceAll("\r?\n", "\\n");
+    }
+
+    /**
+     * Only INodes which map from SRG or have attached Javadocs
+     */
+    private static boolean isSrgOrHasJavadoc(IMappingDetail.INode node) {
+        if (!node.getJavadoc().isEmpty()) return true;
+
+        String original = node.getOriginal();
+        return original.startsWith("net/minecraft/src/C_") ||
+                original.startsWith("field_") ||
+                original.startsWith("f_") ||
+                original.startsWith("func_") ||
+                original.startsWith("m_") ||
+                original.startsWith("p_");
     }
 }
