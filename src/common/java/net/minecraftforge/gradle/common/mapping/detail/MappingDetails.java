@@ -23,6 +23,10 @@ import net.minecraftforge.gradle.common.mapping.util.MappingStreams;
 import net.minecraftforge.srgutils.IMappingFile;
 
 public class MappingDetails {
+
+    /**
+     * Converts two {@link IMappingFile}s into an {@link IMappingDetail} with {@link IMappingDetail.INode#getSide} calculated based on the inputs
+     */
     public static IMappingDetail fromSrg(IMappingFile client, IMappingFile server) {
         Map<String, IMappingDetail.INode> classes = new HashMap<>();
         Map<String, IMappingDetail.INode> fields = new HashMap<>();
@@ -37,6 +41,9 @@ public class MappingDetails {
         return new MappingDetail(classes, fields, methods, params);
     }
 
+    /**
+     * Converts a {@link IMappingFile} into an {@link IMappingDetail}
+     */
     public static IMappingDetail fromSrg(IMappingFile input) {
         Map<String, IMappingDetail.INode> classes = new HashMap<>();
         Map<String, IMappingDetail.INode> fields = new HashMap<>();
@@ -51,6 +58,9 @@ public class MappingDetails {
         return new MappingDetail(classes, fields, methods, params);
     }
 
+    /**
+     * Converts a `mapping.zip` into an {@link IMappingDetail}
+     */
     public static IMappingDetail fromZip(File input) throws IOException {
         try (ZipFile zip = new ZipFile(input)) {
             Map<String, IMappingDetail.INode> classes = readEntry(zip, "classes.csv");

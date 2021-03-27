@@ -1,17 +1,10 @@
 package net.minecraftforge.gradle.common.mapping;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.annotation.Nullable;
 
-import com.google.common.collect.Lists;
 import org.gradle.api.Project;
 import net.minecraftforge.gradle.common.util.BaseRepo;
 import net.minecraftforge.gradle.common.mapping.provider.McpMappingProvider;

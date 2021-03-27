@@ -6,7 +6,13 @@ import java.util.Collection;
 import javax.annotation.Nullable;
 
 import org.gradle.api.Project;
+import net.minecraftforge.gradle.common.mapping.provider.McpMappingProvider;
+import net.minecraftforge.gradle.common.mapping.provider.OfficialMappingProvider;
 
+/**
+ * @see McpMappingProvider
+ * @see OfficialMappingProvider
+ */
 public interface IMappingProvider {
 
     /**

@@ -4,6 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.function.Supplier;
 
+import net.minecraftforge.gradle.common.mapping.info.MappingInfo;
+
+/**
+ * @see MappingInfo
+ */
 public interface IMappingInfo extends Supplier<File> {
     /**
      * @return The channel used to generate/provide this IMappingInfo
