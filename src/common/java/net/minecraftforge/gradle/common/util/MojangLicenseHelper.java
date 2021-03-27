@@ -26,12 +26,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import org.gradle.api.Project;
+import net.minecraftforge.gradle.common.mapping.provider.OfficialMappingProvider;
 
 public class MojangLicenseHelper {
 
@@ -55,7 +54,7 @@ public class MojangLicenseHelper {
     }
 
     public static void displayWarning(Project project, String channel, @Nullable String version) {
-        if ("official".equals(channel)) {
+        if (OfficialMappingProvider.OFFICIAL_CHANNEL.equals(channel)) {
             Optional<String> license = version != null ? getOfficialLicense(project, version) : Optional.empty();
             Optional<String> licenseHash = license.map(HashFunction.SHA1::hash);
 
@@ -69,7 +68,7 @@ public class MojangLicenseHelper {
     }
 
     public static void hide(Project project, String channel, String version) {
-        if (!"official".equals(channel)) return;
+        if (!OfficialMappingProvider.OFFICIAL_CHANNEL.equals(channel)) return;
 
         String hash = getOfficialLicense(project, version)
             .map(HashFunction.SHA1::hash)
@@ -92,7 +91,7 @@ public class MojangLicenseHelper {
     }
 
     public static void show(Project project, String channel, String version) {
-        if (!"official".equals(channel)) return;
+        if (!OfficialMappingProvider.OFFICIAL_CHANNEL.equals(channel)) return;
 
         String hash = getOfficialLicense(project, version)
             .map(HashFunction.SHA1::hash)
@@ -121,7 +120,7 @@ public class MojangLicenseHelper {
     }
 
     private static Optional<String> getOfficialLicense(Project project, String version) {
-        String minecraftVersion = getMinecraftVersion(version);
+        String minecraftVersion = OfficialMappingProvider.getMinecraftVersion(version);
         String artifact = "net.minecraft:client:" + minecraftVersion + ":mappings@txt";
 
         File client = MavenArtifactDownloader.generate(project, artifact, true);
@@ -144,17 +143,5 @@ public class MojangLicenseHelper {
 
     private static Path getLicensePath(Project project, String hash) {
         return new File(Utils.getCache(project, "licenses"), hash + ".marker").toPath();
-    }
-
-    private static final Predicate<String> MCP_CONFIG_TIMESTAMP = Pattern.compile("\\d{8}\\.\\d{6}").asPredicate();
-
-    private static String getMinecraftVersion(String version) {
-        int idx = version.lastIndexOf('-');
-
-        if (idx != -1 && MCP_CONFIG_TIMESTAMP.test(version.substring(idx + 1))) {
-            version = version.substring(0, idx);
-        }
-
-        return version;
     }
 }

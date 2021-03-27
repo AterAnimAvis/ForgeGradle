@@ -20,7 +20,8 @@ import net.minecraftforge.gradle.common.mapping.provider.OfficialMappingProvider
 public class MappingProviders {
 
     /*
-     * Can't use SPI due to Gradle's ClassLoading https://discuss.gradle.org/t/loading-serviceloader-providers-in-plugin-project-apply-project/28121
+     * Can't use SPI due to Gradle's ClassLoading
+     * https://discuss.gradle.org/t/loading-serviceloader-providers-in-plugin-project-apply-project/28121
      *
      * Why a Map? Because Gradle Plugins can get applied multiple times causing multiple registration calls (If they register in apply).
      * 500+ IMappingProviders from the original 9 over the course of 30 minutes, thanks.
@@ -36,15 +37,15 @@ public class MappingProviders {
     /**
      * Registers an {@link IMappingProvider} which will then be considered for resolution of a `mappings.zip`.
      */
-    public static void register(String name, IMappingProvider provider) {
-        PROVIDERS.put(name, provider);
+    public static void register(String identifier, IMappingProvider provider) {
+        PROVIDERS.put(identifier, provider);
     }
 
     /**
      * Unregisters an {@link IMappingProvider} by identifier
      */
-    public static void unregister(String name) {
-        PROVIDERS.remove(name);
+    public static void unregister(String identifier) {
+        PROVIDERS.remove(identifier);
     }
 
     /**

@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.gradle.api.Project;
+import net.minecraftforge.gradle.common.mapping.IMappingProvider;
 import net.minecraftforge.gradle.common.mapping.detail.MappingDetails;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
@@ -13,16 +14,20 @@ import net.minecraftforge.gradle.common.util.MojangLicenseHelper;
 import net.minecraftforge.gradle.common.mapping.IMappingInfo;
 import net.minecraftforge.srgutils.IMappingFile;
 
-public class OfficialMappingProvider extends CachingProvider {
+import static net.minecraftforge.gradle.common.mapping.util.CacheUtils.*;
+
+public class OfficialMappingProvider implements IMappingProvider {
+
+    public static String OFFICIAL_CHANNEL = "official";
 
     @Override
     public Collection<String> getMappingChannels() {
-        return Collections.singleton("official");
+        return Collections.singleton(OFFICIAL_CHANNEL);
     }
 
     @Override
     public IMappingInfo getMappingInfo(Project project, String channel, String version) throws IOException {
-        String mcVersion = getMCVersion(version);
+        String mcVersion = getMinecraftVersion(version);
 
         File clientPG = MavenArtifactDownloader.generate(project, "net.minecraft:client:" + mcVersion + ":mappings@txt", true);
         File serverPG = MavenArtifactDownloader.generate(project, "net.minecraft:server:" + mcVersion + ":mappings@txt", true);
@@ -34,10 +39,10 @@ public class OfficialMappingProvider extends CachingProvider {
             throw new IllegalStateException("Could not create " + version + " official mappings due to missing MCP's tsrg");
 
         File mcp = getMCPConfigZip(project, version);
-        if (mcp == null)
-            return null; // TODO: handle when MCPConfig zip could not be downloaded
+        if (mcp == null) // TODO: handle when MCPConfig zip could not be downloaded
+            throw new IllegalStateException("Could not create " + version + " official mappings due to missing MCPConfig zip");
 
-        MojangLicenseHelper.displayWarning(project, clientPG);
+        MojangLicenseHelper.displayWarning(project, channel, version); //TODO: Needs timeout, Abstract the License system?
 
         File mappings = cacheMappings(project, channel, version, "zip");
         HashStore cache = commonHash(project, mcp)
@@ -67,7 +72,7 @@ public class OfficialMappingProvider extends CachingProvider {
         });
     }
 
-    public static String getMCVersion(String version) {
+    public static String getMinecraftVersion(String version) {
         int idx = version.lastIndexOf('-');
 
         if (idx != -1 && version.substring(idx + 1).matches("\\d{8}\\.\\d{6}")) {

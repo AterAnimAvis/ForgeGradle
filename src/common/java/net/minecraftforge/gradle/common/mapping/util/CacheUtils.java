@@ -1,4 +1,4 @@
-package net.minecraftforge.gradle.common.mapping.provider;
+package net.minecraftforge.gradle.common.mapping.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -7,26 +7,19 @@ import java.util.Objects;
 
 import org.gradle.api.Project;
 import net.minecraftforge.gradle.common.config.MCPConfigV2;
+import net.minecraftforge.gradle.common.mapping.IMappingDetail;
+import net.minecraftforge.gradle.common.mapping.generator.MappingZipGenerator;
+import net.minecraftforge.gradle.common.mapping.info.MappingInfo;
 import net.minecraftforge.gradle.common.util.HashFunction;
 import net.minecraftforge.gradle.common.util.HashStore;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
 import net.minecraftforge.gradle.common.util.Utils;
 import net.minecraftforge.gradle.common.util.func.IOSupplier;
-import net.minecraftforge.gradle.common.mapping.IMappingDetail;
-import net.minecraftforge.gradle.common.mapping.IMappingProvider;
-import net.minecraftforge.gradle.common.mapping.generator.MappingZipGenerator;
-import net.minecraftforge.gradle.common.mapping.info.MappingInfo;
 import net.minecraftforge.srgutils.IMappingFile;
 
-/**
- * TODO: Move these to Helper Class?
- */
-public abstract class CachingProvider implements IMappingProvider {
+public class CacheUtils {
 
-    /**
-     * TODO: DOCS
-     */
-    protected MappingInfo fromCachable(String channel, String version, HashStore cache, File destination, IOSupplier<IMappingDetail> supplier) throws IOException {
+    public static MappingInfo fromCachable(String channel, String version, HashStore cache, File destination, IOSupplier<IMappingDetail> supplier) throws IOException {
         if (!cache.isSame() || !destination.exists()) {
             IMappingDetail detail = supplier.get();
 
@@ -41,7 +34,7 @@ public abstract class CachingProvider implements IMappingProvider {
         return MappingInfo.of(channel, version, destination);
     }
 
-    protected File findRenames(Project project, String classifier, IMappingFile.Format format, String version, boolean toObf) throws IOException {
+    public static File findRenames(Project project, String classifier, IMappingFile.Format format, String version, boolean toObf) throws IOException {
         String ext = format.name().toLowerCase();
         File mcp = getMCPConfigZip(project, version);
         if (mcp == null)
@@ -62,39 +55,40 @@ public abstract class CachingProvider implements IMappingProvider {
         return file;
     }
 
-    protected File getMCPConfigZip(Project project, String version) {
+    public static File getMCPConfigZip(Project project, String version) {
         return MavenArtifactDownloader.manual(project, "de.oceanlabs.mcp:mcp_config:" + version + "@zip", false);
     }
 
-    protected File cacheMappings(Project project, String channel, String version, String ext) {
+    public static File cacheMappings(Project project, String channel, String version, String ext) {
         return cacheMC(project, Objects.equals(channel, "official") ? "mapping" : "mappings_" + channel, version, "mapping", ext);
     }
 
-    protected File cacheMC(Project project, String side, String version, String classifier, String ext) {
+    public static File cacheMC(Project project, String side, String version, String classifier, String ext) {
         if (classifier != null)
             return cache(project, "net", "minecraft", side, version, side + '-' + version + '-' + classifier + '.' + ext);
         return cache(project, "net", "minecraft", side, version, side + '-' + version + '.' + ext);
     }
 
-    protected File cacheMCP(Project project, String version, String classifier, String ext) {
+    public static File cacheMCP(Project project, String version, String classifier, String ext) {
         if (classifier != null)
             return cache(project, "de", "oceanlabs", "mcp", "mcp_config", version, "mcp_config-" + version + '-' + classifier + '.' + ext);
         return cache(project, "de", "oceanlabs", "mcp", "mcp_config", version, "mcp_config-" + version + '.' + ext);
     }
 
-    protected File cacheMCP(Project project, String version) {
+    public static File cacheMCP(Project project, String version) {
         return cache(project, "de", "oceanlabs", "mcp", "mcp_config", version);
     }
 
-    protected File cache(Project project, String... path) {
+    public static File cache(Project project, String... path) {
         return new File(Utils.getCache(project, "mcp_repo"), String.join(File.separator, path)); // TODO: remove hardcoded cache root
     }
 
-    protected HashStore commonHash(Project project) {
+    public static HashStore commonHash(Project project) {
         return new HashStore(Utils.getCache(project, "mcp_repo"));  // TODO: remove hardcoded cache root
     }
 
-    protected HashStore commonHash(Project project, File mcp) {
+    public static HashStore commonHash(Project project, File mcp) {
         return commonHash(project).add("mcp", mcp);
     }
+
 }

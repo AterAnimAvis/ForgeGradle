@@ -62,6 +62,38 @@ public class MappingDetails {
         }
     }
 
+    /**
+     * Classes are represented in `.` form in the `mappings.zip and with '/' in FG/SRG
+     * @see #decodeClass
+     */
+    public static String encodeClass(String name) {
+        return name.replace("/", ".");
+    }
+
+    /**
+     * Line breaks in encoded Javadocs are represented as literal \n
+     * @see #decodeJavadoc
+     */
+    public static String encodeJavadoc(String javadoc) {
+        return javadoc.replaceAll("\r?\n", "\\n");
+    }
+
+    /**
+     * Classes are represented in `.` form in the `mappings.zip and with '/' in FG/SRG
+     * @see #encodeClass
+     */
+    public static String decodeClass(String name) {
+        return name.replace(".", "/");
+    }
+
+    /**
+     * Line breaks in encoded Javadocs are represented as literal \n
+     * @see #encodeJavadoc
+     */
+    public static String decodeJavadoc(String javadoc) {
+        return javadoc.replaceAll("\\n", "\n");
+    }
+
     private static void forEach(IMappingFile client, IMappingFile server, BiConsumer<IMappingFile, BiConsumer<String, Node>> iterator, BiConsumer<String, Node> consumer) {
         Map<String, Node> clientNodes = new HashMap<>();
         Map<String, Node> serverNodes = new HashMap<>();
@@ -118,12 +150,12 @@ public class MappingDetails {
             String obf = headers.contains("searge") ? "searge" : "param";
 
             reader.forEach(row -> {
-                String obfuscated = row.getField(obf);
-                String name = get(headers, row, "name", obfuscated);
+                String obfuscated = decodeClass(row.getField(obf));
+                String name = decodeClass(get(headers, row, "name", obfuscated));
                 String side = get(headers, row, "side", Sides.BOTH);
-                String javadoc = get(headers, row, "desc", "");
+                String javadoc = decodeJavadoc(get(headers, row, "desc", ""));
 
-                nodes.put(obfuscated.replace(".", "/"), Node.of(obfuscated.replace(".", "/"), name.replace(".", "/"), side, javadoc.replaceAll("\\n", "\n")));
+                nodes.put(obfuscated, Node.of(obfuscated, name, side, javadoc));
             });
         }
 

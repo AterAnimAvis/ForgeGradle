@@ -159,7 +159,7 @@ public class MCPRepo extends BaseRepo {
         if (group.equals(GROUP_MINECRAFT)) {
             if (name.startsWith("mappings_")) {
                 if ("zip".equals(ext)) {
-                    return findNames(name.substring(9) + '_' + version);
+                    return findNames(name.substring(9), version);
                 } else if ("pom".equals(ext)) {
                     return findEmptyPom(name, version);
                 }
@@ -322,8 +322,8 @@ public class MCPRepo extends BaseRepo {
         return ret;
     }
 
-    private File findNames(String mapping) throws IOException {
-        return MappingProviders.getInfo(project, mapping).get();
+    private File findNames(String channel, String version) throws IOException {
+        return MappingProviders.getInfo(project, channel, version).get();
     }
 
     private File findExtra(String side, String version) throws IOException {

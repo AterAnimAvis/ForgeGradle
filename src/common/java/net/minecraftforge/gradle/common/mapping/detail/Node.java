@@ -69,8 +69,7 @@ public class Node implements IMappingDetail.INode {
     public static Node of(IMappingFile.INode node) {
         Map<String, String> meta = node.getMetadata();
         String side = meta.getOrDefault("side", Sides.BOTH);
-        //TODO: Check that `comment` is the right key
-        String javadoc = meta.getOrDefault("comment", "");
+        String javadoc = meta.getOrDefault("comment", ""); //TODO: Check that `comment` is the right key
 
         return of(node.getOriginal(), node.getMapped(), side, javadoc);
     }
